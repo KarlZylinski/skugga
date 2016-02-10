@@ -1,2 +1,2 @@
 call "%VS140COMNTOOLS%..\\..\\VC\\vcvarsall.bat" amd64
-cl.exe /D _HAS_EXCEPTIONS=0 /W4 /WX /TP /DUNICODE /wd4201 /D _CRT_SECURE_NO_WARNINGS /Zi /MTd /D DEBUG main.cpp /link /subsystem:windows /entry:mainCRTStartup /incremental:no d3d11.lib user32.lib D3DCompiler.lib /out:skugga.exe
+cl.exe /D _HAS_EXCEPTIONS=0 /W4 /WX /TP /DUNICODE /wd4201 /wd4100 /D _CRT_SECURE_NO_WARNINGS /Zi /MTd /D DEBUG main.cpp /link /subsystem:windows /entry:mainCRTStartup /incremental:no d3d11.lib user32.lib D3DCompiler.lib /out:skugga.exe
