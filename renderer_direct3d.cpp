@@ -21,7 +21,7 @@ struct RendererState
     ID3D11VertexShader* vertex_shader;
     ID3D11PixelShader* pixel_shader;
     ID3D11Buffer* constant_buffer;
-    static const unsigned num_geometries = 256;
+    static const unsigned num_geometries = 4096;
     Geometry geometries[num_geometries];
 };
 
@@ -118,6 +118,11 @@ int find_free_geometry_handle(const RendererState& rs)
 
 unsigned load_geometry(RendererState* rs, Vertex* vertices, unsigned num_vertices)
 {
+    unsigned handle = renderer::find_free_geometry_handle(*rs);
+
+    if (handle == -1)
+        return InvalidHandle;
+
     ID3D11Buffer* vertex_buffer;
     D3D11_BUFFER_DESC bd = {0};
     bd.Usage = D3D11_USAGE_DYNAMIC;
@@ -132,9 +137,22 @@ unsigned load_geometry(RendererState* rs, Vertex* vertices, unsigned num_vertice
     Geometry g = {0};
     g.mesh = vertex_buffer;
     g.num_vertices = num_vertices;
-    unsigned handle = renderer::find_free_geometry_handle(*rs);
     rs->geometries[handle] = g;
     return handle;
+}
+
+void unload_geometry(RendererState* rs, unsigned geometry_handle)
+{
+    if (geometry_handle < 0 || geometry_handle >= rs->num_geometries)
+        return;
+
+    Geometry* geometry = &rs->geometries[geometry_handle];
+
+    if (geometry->mesh == nullptr)
+        return;
+
+    geometry->mesh->Release();
+    memset(rs->geometries + geometry_handle, 0, sizeof(Geometry));
 }
 
 void draw(RendererState* rs, unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)

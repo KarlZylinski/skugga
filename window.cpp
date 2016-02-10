@@ -3,6 +3,10 @@ struct Window
     HWND handle;
     WNDCLASSEX window_class;
     bool closed;
+    bool up;
+    bool down;
+    bool left;
+    bool right;
 };
 
 namespace window
@@ -19,6 +23,26 @@ LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPARAM lpar
     case WM_QUIT:
     case WM_CLOSE:
         window->closed = true;
+        return 0;
+    case WM_KEYDOWN:
+        if (wparam == VK_UP)
+            window->up = true;
+        else if(wparam == VK_DOWN)
+            window->down = true;
+        else if(wparam == VK_RIGHT)
+            window->right = true;
+        else if(wparam == VK_LEFT)
+            window->left = true;
+        return 0;
+    case WM_KEYUP:
+        if (wparam == VK_UP)
+            window->up = false;
+        else if(wparam == VK_DOWN)
+            window->down = false;
+        else if(wparam == VK_RIGHT)
+            window->right = false;
+        else if(wparam == VK_LEFT)
+            window->left = false;
         return 0;
     }
 

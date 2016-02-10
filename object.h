@@ -8,5 +8,6 @@ struct Object
 
 namespace object
 {
-Object create(RendererState* rs, const Geometry& geometry);
+Object create(const Geometry& geometry);
+void destroy(RendererState* rs, const Object& object);
 }
