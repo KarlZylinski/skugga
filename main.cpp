@@ -31,10 +31,11 @@ int main()
     camera.world_transform.w.z = -5;
     Color clear_color = {0.2f, 0, 0, 1};
 
-    Object triangles[4096];
+    const int n = 512;
+    Object triangles[n];
     memset(triangles, 0, sizeof(triangles));
 
-    for (unsigned i = 0; i < 4096; ++i)
+    for (unsigned i = 0; i < n; ++i)
     {
         triangles[i] = create_test_triangle(&renderer_state);
         triangles[i].world_transform.w.x = (rand() % 10000)/1000.0f - 5;
@@ -68,14 +69,15 @@ int main()
         renderer::clear(&renderer_state, clear_color);
         Matrix4x4 view_matrix = matrix4x4::inverse(camera.world_transform);
 
-        for (unsigned i = 0; i < 4096; ++i)
+        for (unsigned i = 0; i < n; ++i)
         {
            renderer::draw(&renderer_state, triangles[i].geometry_handle, triangles[i].world_transform, view_matrix, camera.projection_matrix);
         }
+        
         renderer::present(&renderer_state);
     }
 
-    for (unsigned i = 0; i < 4096; ++i)
+    for (unsigned i = 0; i < n; ++i)
     {
         object::destroy(&renderer_state, triangles[i]);
     }

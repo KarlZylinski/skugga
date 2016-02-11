@@ -61,7 +61,7 @@ void init(Window* w)
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
     wc.lpszClassName = L"Skugga";
     w->window_class = wc;
-    RegisterClassEx(&wc);
+    RegisterClassEx(&w->window_class);
     RECT window_rect = {0, 0, 800, 800};
     AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
     w->handle = CreateWindowEx(
