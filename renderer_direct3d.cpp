@@ -29,6 +29,9 @@ struct RendererState
 
 namespace renderer
 {
+
+void unload_geometry(RendererState* rs, unsigned geometry_handle);
+
 void init(RendererState* rs, HWND output_window_handle)
 {
     DXGI_SWAP_CHAIN_DESC scd = {0};
@@ -110,6 +113,14 @@ void init(RendererState* rs, HWND output_window_handle)
 
 void shutdown(RendererState* rs)
 {
+    for (unsigned i = 0; i < rs->num_geometries; ++ i)
+    {
+        const Geometry& g = rs->geometries[i];
+
+        if (g.mesh != nullptr)
+            unload_geometry(rs, i);
+    }
+
     rs->depth_stencil_texture->Release();
     rs->depth_stencil_view->Release();
     rs->swapchain->Release();

@@ -1,11 +1,13 @@
 #include <windows.h>
 #include <ctime>
+#include "object.h"
 #include "types.h"
+
+// Unified build sources.
 #include "math.cpp"
 #include "window.cpp"
 #include "renderer.cpp"
 #include "renderer_direct3d.cpp"
-#include "object.cpp"
 #include "primitives.cpp"
 #include "color.cpp"
 #include "world.cpp"
@@ -29,7 +31,9 @@ void create_poop(World* world, RendererState* rs)
 
     for (unsigned i = 0; i < 256; ++i)
     {
-        Object o = object::create(box_geometry_handle);
+        Object o = {0};
+        o.geometry_handle = box_geometry_handle;
+        o.world_transform = matrix4x4::identity();
         o.world_transform.w.x = (rand() % 1000)/1000.0f - 0.5f;
         o.world_transform.w.y = (rand() % 1000)/1000.0f - 0.5f;
         o.world_transform.w.z = (rand() % 1000)/1000.0f - 0.5f;
@@ -89,15 +93,11 @@ int main()
 
         for (unsigned i = 0; i < world.num_objects; ++i)
         {
-           renderer::draw(&renderer_state, world.objects[i].geometry_handle, world.objects[i].world_transform, view_matrix, camera.projection_matrix);
+            if (world.objects[i].valid)
+                renderer::draw(&renderer_state, world.objects[i].geometry_handle, world.objects[i].world_transform, view_matrix, camera.projection_matrix);
         }
 
         renderer::present(&renderer_state);
-    }
-
-    for (unsigned i = 0; i < world.num_objects; ++i)
-    {
-        object::destroy(&renderer_state, world.objects[i]);
     }
 
     renderer::shutdown(&renderer_state);
