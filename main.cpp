@@ -12,33 +12,25 @@
 #include "color.cpp"
 #include "world.cpp"
 
-void create_poop(World* world, RendererState* rs)
+void create_scaled_box(Vertex* vertices, const Vector3& scale, const Color& color)
 {
-    Vertex vertices[primitives::box_size];
-    Color box_color = color::random();
-
     for (unsigned i = 0; i < primitives::box_size; ++i)
     {
-        if (i % 6 == 0)
-        {
-            box_color = color::random();
-        }
-        vertices[i].position = primitives::box[i] * 0.05f;
-        vertices[i].color = box_color;
+        vertices[i].position = primitives::box[i] * scale;
+        vertices[i].color = color;
     }
+}
 
-    unsigned box_geometry_handle = renderer::load_geometry(rs, vertices, primitives::box_size);
-
-    for (unsigned i = 0; i < 256; ++i)
-    {
-        Object o = {0};
-        o.geometry_handle = box_geometry_handle;
-        o.world_transform = matrix4x4::identity();
-        o.world_transform.w.x = (rand() % 1000)/1000.0f - 0.5f;
-        o.world_transform.w.y = (rand() % 1000)/1000.0f - 0.5f;
-        o.world_transform.w.z = (rand() % 1000)/1000.0f - 0.5f;
-        world::add_object(world, o);
-    }
+void create_poop(World* world, RendererState* rs)
+{
+    Color box_color = color::random();
+    Vertex floor_vertices[primitives::box_size];
+    create_scaled_box(floor_vertices, {4, 0.3f, 6}, box_color);
+    unsigned box_geometry_handle = renderer::load_geometry(rs, floor_vertices, primitives::box_size);
+    Object floor_obj = {0};
+    floor_obj.geometry_handle = box_geometry_handle;
+    floor_obj.world_transform = matrix4x4::identity();
+    world::add_object(world, floor_obj);
 }
 
 int main()

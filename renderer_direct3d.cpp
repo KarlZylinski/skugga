@@ -207,7 +207,7 @@ void draw(RendererState* rs, unsigned geometry_handle, const Matrix4x4& world_tr
     rs->device_context->Draw(geometry.num_vertices, 0);
 }
 
-void clear(RendererState*rs, const Color& color)
+void clear(RendererState* rs, const Color& color)
 {
     rs->device_context->ClearRenderTargetView(rs->back_buffer, &color.r);
     rs->device_context->ClearDepthStencilView(rs->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);

@@ -18,7 +18,7 @@ namespace renderer
 void setup_camera(Camera* camera)
 {
     float near_plane = 0.01f;
-    float far_plane = 100.0f;
+    float far_plane = 1000.0f;
     float fov = 90.0f;
     float aspect = 1.0f;
     float y_scale = 1.0f / tan((3.14f / 180.0f) * fov / 2);

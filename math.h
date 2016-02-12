@@ -17,6 +17,7 @@ struct Matrix4x4
 
 Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2);
 Vector3 operator*(const Vector3& v, float s);
+Vector3 operator*(const Vector3& v1, const Vector3& v2);
 Vector4 operator*(const Vector4& v, float s);
 Vector4 operator*(const Vector4& v1, const Vector4& v2);
 Vector4 operator*(const Vector4& v, const Matrix4x4& m);
