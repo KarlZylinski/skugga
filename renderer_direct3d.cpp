@@ -78,9 +78,10 @@ void init(RendererState* rs, HWND output_window_handle)
     rs->device_context->PSSetShader(rs->pixel_shader, 0, 0);
     D3D11_INPUT_ELEMENT_DESC ied[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
-    rs->device->CreateInputLayout(ied, 2, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &rs->input_layout);
+    rs->device->CreateInputLayout(ied, 3, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &rs->input_layout);
     rs->device_context->IASetInputLayout(rs->input_layout);
     D3D11_BUFFER_DESC cbd = {0};
     cbd.ByteWidth = sizeof(ConstantBuffer);

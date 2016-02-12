@@ -1,4 +1,5 @@
 #include "math.h"
+#include <cmath>
 
 Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2)
 {
@@ -23,6 +24,40 @@ Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2)
         m1.w.x * m2.x.z + m1.w.y * m2.y.z + m1.w.z * m2.z.z + m1.w.w * m2.w.z,
         m1.w.x * m2.x.w + m1.w.y * m2.y.w + m1.w.z * m2.z.w + m1.w.w * m2.w.w
     };
+}
+
+void operator+=(Vector2& v1, const Vector2& v2)
+{
+    v1.x += v2.x;
+    v1.y += v2.y;
+}
+
+Vector2 operator+(const Vector2& v1, const Vector2& v2)
+{
+    return Vector2 {v1.x + v2.x, v1.y + v2.y};
+}
+
+void operator+=(Vector2i& v1, const Vector2i& v2)
+{
+    v1.x += v2.x;
+    v1.y += v2.y;
+}
+
+Vector2i operator+(const Vector2i& v1, const Vector2i& v2)
+{
+    return Vector2i {v1.x + v2.x, v1.y + v2.y};
+}
+
+void operator+=(Vector3& v1, const Vector3& v2)
+{
+    v1.x += v2.x;
+    v1.y += v2.y;
+    v1.z += v2.z;
+}
+
+Vector3 operator+(const Vector3& v1, const Vector3& v2)
+{
+    return Vector3 {v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
 }
 
 Vector3 operator*(const Vector3& v, float s)
@@ -146,6 +181,44 @@ Matrix4x4 inverse(const Matrix4x4& m)
     return inverse * one_over_determinant;
 }
 
+Matrix4x4 from_rotation_and_translation(const Quaternion& q, const Vector3& t)
+{
+    float x = q.x, y = q.y, z = q.z, w = q.w,
+        x2 = x + x,
+        y2 = y + y,
+        z2 = z + z,
+
+        xx = x * x2,
+        xy = x * y2,
+        xz = x * z2,
+        yy = y * y2,
+        yz = y * z2,
+        zz = z * z2,
+        wx = w * x2,
+        wy = w * y2,
+        wz = w * z2;
+
+    Matrix4x4 out_mat = {0};
+    float* out = &out_mat.x.x;
+    out[0] = 1 - (yy + zz);
+    out[1] = xy + wz;
+    out[2] = xz - wy;
+    out[3] = 0;
+    out[4] = xy - wz;
+    out[5] = 1 - (xx + zz);
+    out[6] = yz + wx;
+    out[7] = 0;
+    out[8] = xz + wy;
+    out[9] = yz - wx;
+    out[10] = 1 - (xx + yy);
+    out[11] = 0;
+    out[12] = t.x;
+    out[13] = t.y;
+    out[14] = t.z;
+    out[15] = 1;
+    return out_mat;
+}
+
 } // namespace matrix4x4
 
 namespace vector4
@@ -157,3 +230,50 @@ float dot(const Vector4& v1, const Vector4& v2)
 }
 
 } // namespace vector4
+
+namespace quaternion
+{
+
+Quaternion rotate_x(const Quaternion& q, float rads)
+{
+    float adjusted_rads = rads * 0.5f; 
+    float bx = sin(adjusted_rads);
+    float bw = cos(adjusted_rads);
+    return
+    {
+        q.x * bw + q.w * bx,
+        q.y * bw + q.z * bx,
+        q.z * bw - q.y * bx,
+        q.w * bw - q.x * bx
+    };
+}
+
+Quaternion rotate_y(const Quaternion& q, float rads)
+{
+    float adjusted_rads = rads * 0.5f;
+    float by = sin(adjusted_rads);
+    float bw = cos(adjusted_rads);
+    return
+    {
+        q.x * bw - q.z * by,
+        q.y * bw + q.w * by,
+        q.z * bw + q.x * by,
+        q.w * bw - q.y * by
+    };
+}
+
+Quaternion rotate_z(const Quaternion& q, float rads)
+{
+    float adjusted_rads = rads * 0.5f;
+    float bz = sin(adjusted_rads);
+    float bw = cos(adjusted_rads);
+    return
+    {
+        q.x * bw + q.y * bz,
+        q.y * bw - q.x * bz,
+        q.z * bw + q.w * bz,
+        q.w * bw - q.z * bz
+    };
+}
+
+} // namespace quaternion
