@@ -70,6 +70,19 @@ Vector3 operator*(const Vector3& v1, const Vector3& v2)
     return Vector3 {v1.x * v2.x, v1.y * v2.y, v1.z * v2.z};
 }
 
+void operator+=(Vector4& v1, const Vector4& v2)
+{
+    v1.x += v2.x;
+    v1.y += v2.y;
+    v1.z += v2.z;
+    v1.w += v2.w;
+}
+
+Vector4 operator+(const Vector4& v1, const Vector4& v2)
+{
+    return {v1.x * v2.x, v1.y * v2.y, v1.z * v2.z, v1.w + v2.w};
+}
+
 Vector4 operator*(const Vector4& v, float s)
 {
     return Vector4 {v.x * s, v.y * s, v.z * s, v.w * s};
@@ -105,11 +118,6 @@ Vector4 operator-(const Vector4& v1, const Vector4& v2)
     return Vector4 {v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w};
 }
 
-Vector4 operator+(const Vector4& v1, const Vector4& v2)
-{
-    return Vector4 {v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w};
-}
-
 namespace matrix4x4
 {
 
@@ -126,59 +134,48 @@ Matrix4x4 identity()
 
 Matrix4x4 inverse(const Matrix4x4& m)
 {
-    float coef00 = m.z.z * m.w.w - m.w.z * m.z.w;
-    float coef02 = m.y.z * m.w.w - m.w.z * m.y.w;
-    float coef03 = m.y.z * m.z.w - m.z.z * m.y.w;
+    const float* a = &m.x.x;
+    float a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
+        a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
+        a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11],
+        a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15],
 
-    float coef04 = m.z.y * m.w.w - m.w.y * m.z.w;
-    float coef06 = m.y.y * m.w.w - m.w.y * m.y.w;
-    float coef07 = m.y.y * m.z.w - m.z.y * m.y.w;
+        b00 = a00 * a11 - a01 * a10,
+        b01 = a00 * a12 - a02 * a10,
+        b02 = a00 * a13 - a03 * a10,
+        b03 = a01 * a12 - a02 * a11,
+        b04 = a01 * a13 - a03 * a11,
+        b05 = a02 * a13 - a03 * a12,
+        b06 = a20 * a31 - a21 * a30,
+        b07 = a20 * a32 - a22 * a30,
+        b08 = a20 * a33 - a23 * a30,
+        b09 = a21 * a32 - a22 * a31,
+        b10 = a21 * a33 - a23 * a31,
+        b11 = a22 * a33 - a23 * a32,
 
-    float coef08 = m.z.y * m.w.z - m.w.y * m.z.z;
-    float coef10 = m.y.y * m.w.z - m.w.y * m.y.z;
-    float coef11 = m.y.y * m.z.z - m.z.y * m.y.z;
+    // Calculate the determinant
+        det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+    det = 1.0f / det;
 
-    float coef12 = m.z.x * m.w.w - m.w.x * m.z.w;
-    float coef14 = m.y.x * m.w.w - m.w.x * m.y.w;
-    float coef15 = m.y.x * m.z.w - m.z.x * m.y.w;
-
-    float coef16 = m.z.x * m.w.z - m.w.x * m.z.z;
-    float coef18 = m.y.x * m.w.z - m.w.x * m.y.z;
-    float coef19 = m.y.x * m.z.z - m.z.x * m.y.z;
-
-    float coef20 = m.z.x * m.w.y - m.w.x * m.z.y;
-    float coef22 = m.y.x * m.w.y - m.w.x * m.y.y;
-    float coef23 = m.y.x * m.z.y - m.z.x * m.y.y;
-
-    Vector4 fac0 = {coef00, coef00, coef02, coef03};
-    Vector4 fac1 = {coef04, coef04, coef06, coef07};
-    Vector4 fac2 = {coef08, coef08, coef10, coef11};
-    Vector4 fac3 = {coef12, coef12, coef14, coef15};
-    Vector4 fac4 = {coef16, coef16, coef18, coef19};
-    Vector4 fac5 = {coef20, coef20, coef22, coef23};
-
-    Vector4 vec0 = {m.y.x, m.x.x, m.x.x, m.x.x};
-    Vector4 vec1 = {m.y.y, m.x.y, m.x.y, m.x.y};
-    Vector4 vec2 = {m.y.z, m.x.z, m.x.z, m.x.z};
-    Vector4 vec3 = {m.y.w, m.x.w, m.x.w, m.x.w};
-
-    Vector4 inv0 = {vec1 * fac0 - vec2 * fac1 + vec3 * fac2};
-    Vector4 inv1 = {vec0 * fac0 - vec2 * fac3 + vec3 * fac4};
-    Vector4 inv2 = {vec0 * fac1 - vec1 * fac3 + vec3 * fac5};
-    Vector4 inv3 = {vec0 * fac2 - vec1 * fac4 + vec2 * fac5};
-
-    Vector4 signa = {+1, -1, +1, -1};
-    Vector4 signb = {-1, +1, -1, +1};
-    Matrix4x4 inverse = {inv0 * signa, inv1 * signb, inv2 * signa, inv3 * signb};
-
-    Vector4 row0 = {inverse.x.x, inverse.y.x, inverse.z.x, inverse.w.x};
-
-    Vector4 dot0 = {m.x * row0};
-    float dot1 = (dot0.x + dot0.y) + (dot0.z + dot0.w);
-
-    float one_over_determinant = 1.0f / dot1;
-
-    return inverse * one_over_determinant;
+    Matrix4x4 result;
+    float* out = &result.x.x;
+    out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+    out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+    out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+    out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
+    out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+    out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+    out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+    out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
+    out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+    out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+    out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+    out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
+    out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
+    out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
+    out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+    out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+    return result;
 }
 
 Matrix4x4 from_rotation_and_translation(const Quaternion& q, const Vector3& t)
@@ -274,6 +271,11 @@ Quaternion rotate_z(const Quaternion& q, float rads)
         q.z * bw + q.w * bz,
         q.w * bw - q.z * bz
     };
+}
+
+Quaternion identity()
+{
+    return {0, 0, 0, 1};
 }
 
 } // namespace quaternion

@@ -11,6 +11,11 @@ struct ConstantBuffer
     Matrix4x4 model_view_projection;
 };
 
+namespace renderer
+{
+    static const unsigned num_resources = 4096;
+}
+
 struct RendererState
 {
     IDXGISwapChain* swapchain;
@@ -23,8 +28,7 @@ struct RendererState
     ID3D11Buffer* constant_buffer;
     ID3D11Texture2D* depth_stencil_texture;
     ID3D11DepthStencilView* depth_stencil_view;
-    static const unsigned num_geometries = 4096;
-    Geometry geometries[num_geometries];
+    Geometry geometries[renderer::num_resources];
 };
 
 namespace renderer
@@ -114,7 +118,7 @@ void init(RendererState* rs, HWND output_window_handle)
 
 void shutdown(RendererState* rs)
 {
-    for (unsigned i = 0; i < rs->num_geometries; ++ i)
+    for (unsigned i = 0; i < num_resources; ++ i)
     {
         const Geometry& g = rs->geometries[i];
 
@@ -144,7 +148,7 @@ void set_constant_buffers(RendererState* rs, const ConstantBuffer& data)
 
 int find_free_geometry_handle(const RendererState& rs)
 {
-    for (unsigned i = 0; i < rs.num_geometries; ++i)
+    for (unsigned i = 0; i < num_resources; ++i)
     {
         if (rs.geometries[i].mesh == nullptr)
         {
@@ -181,7 +185,7 @@ unsigned load_geometry(RendererState* rs, Vertex* vertices, unsigned num_vertice
 
 void unload_geometry(RendererState* rs, unsigned geometry_handle)
 {
-    if (geometry_handle < 0 || geometry_handle >= rs->num_geometries)
+    if (geometry_handle < 0 || geometry_handle >= num_resources)
         return;
 
     Geometry* geometry = &rs->geometries[geometry_handle];

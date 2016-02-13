@@ -1,0 +1,2 @@
+- add permanent and transient memory. both are pointers increased. temp is reset at end of frame
+- move vertices etc from simulation to renderer over temp memory

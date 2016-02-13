@@ -39,12 +39,13 @@ void operator+=(Vector3& v1, const Vector3& v2);
 Vector3 operator+(const Vector3& v1, const Vector3& v2);
 Vector3 operator*(const Vector3& v, float s);
 Vector3 operator*(const Vector3& v1, const Vector3& v2);
+void operator+=(Vector4& v1, const Vector4& v2);
+Vector4 operator+(const Vector4& v1, const Vector4& v2);
 Vector4 operator*(const Vector4& v, float s);
 Vector4 operator*(const Vector4& v1, const Vector4& v2);
 Vector4 operator*(const Vector4& v, const Matrix4x4& m);
 Matrix4x4 operator*(const Matrix4x4& m, float s);
 Vector4 operator-(const Vector4& v1, const Vector4& v2);
-Vector4 operator+(const Vector4& v1, const Vector4& v2);
 
 namespace matrix4x4
 {
@@ -68,5 +69,6 @@ namespace quaternion
 Quaternion rotate_x(const Quaternion& q, float rads);
 Quaternion rotate_y(const Quaternion& q, float rads);
 Quaternion rotate_z(const Quaternion& q, float rads);
+Quaternion identity();
 
 } // namespace quaternion
