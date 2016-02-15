@@ -165,9 +165,9 @@ LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPARAM lpar
         return 0;
     case WM_INPUT:
         {
-            UINT size;
+            unsigned size;
             GetRawInputData((HRAWINPUT)lparam, RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER));
-            LPBYTE lpb = new BYTE[size];
+            unsigned char* lpb = new unsigned char[size];
 
             if (lpb == nullptr)
                 return 0;

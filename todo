@@ -1,2 +1,2 @@
-- add permanent and transient memory. both are pointers increased. temp is reset at end of frame
-- move vertices etc from simulation to renderer over temp memory
+- add temp allocator. use in obj and world build etc. use cpp destructor to call dealloc etc. make c-interface which functions eat
+- research lightmap uv unwrapping

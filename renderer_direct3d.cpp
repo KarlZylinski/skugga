@@ -2,8 +2,9 @@
 #include <D3Dcompiler.h>
 
 struct Geometry {
-    ID3D11Buffer* mesh;
-    unsigned num_vertices;
+    ID3D11Buffer* vertices;
+    ID3D11Buffer* indices;
+    uint32 num_indices;
 };
 
 struct ConstantBuffer
@@ -83,9 +84,10 @@ void init(RendererState* rs, HWND output_window_handle)
     D3D11_INPUT_ELEMENT_DESC ied[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0}
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
-    rs->device->CreateInputLayout(ied, 3, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &rs->input_layout);
+    rs->device->CreateInputLayout(ied, 4, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &rs->input_layout);
     rs->device_context->IASetInputLayout(rs->input_layout);
     D3D11_BUFFER_DESC cbd = {0};
     cbd.ByteWidth = sizeof(ConstantBuffer);
@@ -122,7 +124,7 @@ void shutdown(RendererState* rs)
     {
         const Geometry& g = rs->geometries[i];
 
-        if (g.mesh != nullptr)
+        if (g.vertices != nullptr)
             unload_geometry(rs, i);
     }
 
@@ -150,7 +152,7 @@ int find_free_geometry_handle(const RendererState& rs)
 {
     for (unsigned i = 0; i < num_resources; ++i)
     {
-        if (rs.geometries[i].mesh == nullptr)
+        if (rs.geometries[i].vertices == nullptr)
         {
             return i;
         }
@@ -158,7 +160,7 @@ int find_free_geometry_handle(const RendererState& rs)
     return -1;
 }
 
-unsigned load_geometry(RendererState* rs, Vertex* vertices, unsigned num_vertices)
+unsigned load_geometry(RendererState* rs, Vertex* vertices, unsigned num_vertices, uint32* indices, unsigned num_indices)
 {
     unsigned handle = renderer::find_free_geometry_handle(*rs);
 
@@ -166,19 +168,33 @@ unsigned load_geometry(RendererState* rs, Vertex* vertices, unsigned num_vertice
         return InvalidHandle;
 
     ID3D11Buffer* vertex_buffer;
-    D3D11_BUFFER_DESC bd = {0};
-    bd.Usage = D3D11_USAGE_DYNAMIC;
-    bd.ByteWidth = sizeof(Vertex) * num_vertices;
-    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    rs->device->CreateBuffer(&bd, nullptr, &vertex_buffer);
-    D3D11_MAPPED_SUBRESOURCE ms;
-    rs->device_context->Map(vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
-    memcpy(ms.pData, vertices, num_vertices * sizeof(Vertex));
-    rs->device_context->Unmap(vertex_buffer, 0);
+    {
+        D3D11_BUFFER_DESC bd = {0};
+        bd.Usage = D3D11_USAGE_DYNAMIC;
+        bd.ByteWidth = sizeof(Vertex) * num_vertices;
+        bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        D3D11_SUBRESOURCE_DATA srd = {0};
+        srd.pSysMem = vertices;
+        rs->device->CreateBuffer(&bd, &srd, &vertex_buffer);
+    }
+
+    ID3D11Buffer* index_buffer;
+    {
+        D3D11_BUFFER_DESC bd = {0};
+        bd.Usage = D3D11_USAGE_DYNAMIC;
+        bd.ByteWidth = sizeof(uint32) * num_indices;
+        bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+        bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        D3D11_SUBRESOURCE_DATA srd = {0};
+        srd.pSysMem = indices;
+        rs->device->CreateBuffer(&bd, &srd, &index_buffer);
+    }
+
     Geometry g = {0};
-    g.mesh = vertex_buffer;
-    g.num_vertices = num_vertices;
+    g.vertices = vertex_buffer;
+    g.indices = index_buffer;
+    g.num_indices = num_indices;
     rs->geometries[handle] = g;
     return handle;
 }
@@ -190,10 +206,11 @@ void unload_geometry(RendererState* rs, unsigned geometry_handle)
 
     Geometry* geometry = &rs->geometries[geometry_handle];
 
-    if (geometry->mesh == nullptr)
+    if (geometry->vertices == nullptr)
         return;
 
-    geometry->mesh->Release();
+    geometry->vertices->Release();
+    geometry->indices->Release();
     memset(rs->geometries + geometry_handle, 0, sizeof(Geometry));
 }
 
@@ -207,9 +224,10 @@ void draw(RendererState* rs, unsigned geometry_handle, const Matrix4x4& world_tr
     rs->device_context->PSSetConstantBuffers(0, 1, &rs->constant_buffer);
     unsigned stride = sizeof(Vertex);
     unsigned offset = 0;
-    rs->device_context->IASetVertexBuffers(0, 1, &geometry.mesh, &stride, &offset);
-    rs->device_context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    rs->device_context->Draw(geometry.num_vertices, 0);
+    rs->device_context->IASetVertexBuffers(0, 1, &geometry.vertices, &stride, &offset);
+    rs->device_context->IASetIndexBuffer(geometry.indices, DXGI_FORMAT_R32_UINT, 0);
+    rs->device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    rs->device_context->DrawIndexed(geometry.num_indices, 0, 0);
 }
 
 void clear(RendererState* rs, const Color& color)

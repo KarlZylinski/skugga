@@ -10,18 +10,17 @@ namespace simulation
 namespace internal
 {
 
-void create_scaled_box(World* world, RendererState* rs, const Vector3& scale, const Vector3& pos, const Color& color)
+void create_scaled_box(World* world, RendererState* rs, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color)
 {
-    Vertex vertices[primitives::box_size];
+    Vertex* scaled_vertices = (Vertex*)temp_memory::alloc(sizeof(Vertex) * m.num_indices);
+    memcpy(scaled_vertices, m.vertices, m.num_vertices * sizeof(Vertex));
 
-    for (unsigned i = 0; i < primitives::box_size; ++i)
+    for (unsigned i = 0; i < m.num_vertices; ++i)
     {
-        vertices[i].position = primitives::box[i] * scale;
-        vertices[i].normal = primitives::box_normals[i];
-        vertices[i].color = color;
+        scaled_vertices[i].position = m.vertices[i].position * scale;
     }
 
-    unsigned box_geometry_handle = renderer::load_geometry(rs, vertices, primitives::box_size);
+    unsigned box_geometry_handle = renderer::load_geometry(rs, scaled_vertices, m.num_vertices, m.indices, m.num_indices);
     Object floor_obj = {0};
     floor_obj.geometry_handle = box_geometry_handle;
     floor_obj.world_transform = matrix4x4::identity();
@@ -31,15 +30,20 @@ void create_scaled_box(World* world, RendererState* rs, const Vector3& scale, co
 
 void create_world(World* world, RendererState* rs)
 {
+    LoadedMesh lm = obj::load("box.wobj");
+
+    if (!lm.valid)
+        return;
+
     float floor_width = 6;
     float floor_depth = 8;
     float floor_thickness = 0.3f;
     float floor_to_cieling = 2;
     float pillar_width = 0.4f;
-    create_scaled_box(world, rs, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random());
-    create_scaled_box(world, rs, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random());
-    create_scaled_box(world, rs, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random());
-    create_scaled_box(world, rs, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random());
+    create_scaled_box(world, rs, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random());
+    create_scaled_box(world, rs, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random());
+    create_scaled_box(world, rs, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random());
+    create_scaled_box(world, rs, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random());
 }
 
 }

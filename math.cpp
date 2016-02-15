@@ -218,6 +218,26 @@ Matrix4x4 from_rotation_and_translation(const Quaternion& q, const Vector3& t)
 
 } // namespace matrix4x4
 
+namespace vector2
+{
+
+bool almost_equal(const Vector2& v1, const Vector2& v2)
+{
+    return ::almost_equal(v1.x, v2.x) && ::almost_equal(v1.y, v2.y);
+}
+
+} // namespace vector3
+
+namespace vector3
+{
+
+bool almost_equal(const Vector3& v1, const Vector3& v2)
+{
+    return ::almost_equal(v1.x, v2.x) && ::almost_equal(v1.y, v2.y) && ::almost_equal(v1.z, v2.z);
+}
+
+} // namespace vector3
+
 namespace vector4
 {
 

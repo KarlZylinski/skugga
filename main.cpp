@@ -2,6 +2,7 @@
 #include <ctime>
 #include "object.h"
 #include "types.h"
+#include "helpers.h"
 
 // Unified build sources.
 #include "memory.cpp"
@@ -9,12 +10,13 @@
 #include "window.cpp"
 #include "renderer.cpp"
 #include "renderer_direct3d.cpp"
-#include "primitives.cpp"
+#include "file.cpp"
 #include "color.cpp"
 #include "world.cpp"
 #include "keyboard.cpp"
 #include "mouse.cpp"
 #include "camera.cpp"
+#include "obj.cpp"
 #include "simulation.cpp"
 
 void key_pressed_callback(Key key)
@@ -36,7 +38,7 @@ void mouse_moved_callback(const Vector2i& delta)
 
 int main()
 {
-    unsigned temp_memory_size = 1024 * 1024 * 100;
+    unsigned temp_memory_size = 1024 * 1024 * 1024;
     void* temp_memory_block = VirtualAlloc(nullptr, temp_memory_size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     temp_memory::init(temp_memory_block, temp_memory_size);
     srand((unsigned)time(0));

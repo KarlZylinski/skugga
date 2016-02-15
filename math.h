@@ -56,6 +56,20 @@ Matrix4x4 from_rotation_and_translation(const Quaternion& q, const Vector3& t);
 
 } // namespace matrix4x4
 
+namespace vector2
+{
+
+bool almost_equal(const Vector2& v1, const Vector2& v2);
+
+} // namespace vector2
+
+namespace vector3
+{
+
+bool almost_equal(const Vector3& v1, const Vector3& v2);
+
+} // namespace vector3
+
 namespace vector4
 {
 

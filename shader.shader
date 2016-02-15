@@ -8,23 +8,25 @@ struct VOut
     float4 position : SV_POSITION;
     float4 vertex_pos : POSITION;
     float3 normal : NORMAL;
+    float2 uv : TEXCOORD;
     float4 color : COLOR;
 };
 
-VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float4 color : COLOR)
+VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR)
 {
     VOut output;
 
     output.position = mul(model_view_projection, position);
     output.vertex_pos = position;
     output.normal = normal;
+    output.uv = uv;
     output.color = color;
 
     return output;
 }
 
 
-float4 PShader(float4 position : SV_POSITION, float4 vertex_pos : POSITION, float3 normal : NORMAL, float4 color : COLOR) : SV_TARGET
+float4 PShader(float4 position : SV_POSITION, float4 vertex_pos : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR) : SV_TARGET
 {
     float3 sun_pos = float3(290, 200, -300);
     float3 pos_to_sun = normalize(sun_pos - vertex_pos.xyz);

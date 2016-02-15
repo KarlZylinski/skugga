@@ -9,5 +9,6 @@ namespace color
 {
 
 Color random();
+bool almost_equal(const Color& c1, const Color& c2);
 
 }
