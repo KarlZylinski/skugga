@@ -1,6 +1,7 @@
 cbuffer ConstantBuffer : register(b0)
 {
     float4x4 model_view_projection;
+    float4 sun_position;
 };
 
 struct VOut
@@ -28,8 +29,7 @@ VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEX
 
 float4 PShader(float4 position : SV_POSITION, float4 vertex_pos : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR) : SV_TARGET
 {
-    float3 sun_pos = float3(290, 200, -300);
-    float3 pos_to_sun = normalize(sun_pos - vertex_pos.xyz);
+    float3 pos_to_sun = normalize(sun_position.xyz - vertex_pos.xyz);
     float light = max(dot(pos_to_sun, normal) - 0.2, 0);
     return float4(color.xyz * light + color.xyz * 0.2, 1.0f);
 }

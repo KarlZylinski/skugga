@@ -14,15 +14,17 @@ namespace internal
 
 void create_scaled_box(World* world, RendererState* rs, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color)
 {
-    Vertex* scaled_vertices = (Vertex*)temp_memory::alloc(sizeof(Vertex) * m.num_indices);
-    memcpy(scaled_vertices, m.vertices, m.num_vertices * sizeof(Vertex));
+    Vertex* scaled_vertices = (Vertex*)temp_memory::alloc(m.vertices.size);
+    memcpy(scaled_vertices, m.vertices.data, m.vertices.size);
+    uint32 num_vertices = array_num(m.vertices, Vertex);
+    uint32 num_indices = array_num(m.indices, uint32);
 
-    for (unsigned i = 0; i < m.num_vertices; ++i)
+    for (unsigned i = 0; i < num_vertices; ++i)
     {
-        scaled_vertices[i].position = m.vertices[i].position * scale;
+        scaled_vertices[i].position = scaled_vertices[i].position * scale;
     }
 
-    unsigned box_geometry_handle = renderer::load_geometry(rs, scaled_vertices, m.num_vertices, m.indices, m.num_indices);
+    unsigned box_geometry_handle = renderer::load_geometry(rs, scaled_vertices, num_vertices, array_raw(m.indices, uint32), num_indices);
     Object floor_obj = {0};
     floor_obj.geometry_handle = box_geometry_handle;
     floor_obj.world_transform = matrix4x4::identity();

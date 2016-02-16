@@ -1,2 +1,9 @@
-- add temp allocator. use in obj and world build etc. use cpp destructor to call dealloc etc. make c-interface which functions eat
+- make temp allocator nicer
+    figure out a way to get rid of the array of allocations
+    add stack allocation for small allocations (4kb?)
+
+- revamp dynamic array
+    maybe have a header before start of data block with size info etc?
+    or templates?
+
 - research lightmap uv unwrapping

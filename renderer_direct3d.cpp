@@ -10,6 +10,7 @@ struct Geometry {
 struct ConstantBuffer
 {
     Matrix4x4 model_view_projection;
+    Vector4 sun_position;
 };
 
 namespace renderer
@@ -144,7 +145,7 @@ void set_constant_buffers(RendererState* rs, const ConstantBuffer& data)
 {
     D3D11_MAPPED_SUBRESOURCE ms_constant_buffer;
     rs->device_context->Map(rs->constant_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms_constant_buffer);
-    memcpy(ms_constant_buffer.pData, &data, sizeof(data));
+    memcpy(ms_constant_buffer.pData, &data, sizeof(ConstantBuffer));
     rs->device_context->Unmap(rs->constant_buffer, 0);
 }
 
@@ -217,8 +218,9 @@ void unload_geometry(RendererState* rs, unsigned geometry_handle)
 void draw(RendererState* rs, unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)
 {
     auto geometry = rs->geometries[geometry_handle];
-    ConstantBuffer constant_buffer_data = {0};
+    ConstantBuffer constant_buffer_data = {};
     constant_buffer_data.model_view_projection = world_transform_matrix * view_matrix * projection_matrix;
+    constant_buffer_data.sun_position = {290, 200, -300, 1};
     renderer::set_constant_buffers(rs, constant_buffer_data);
     rs->device_context->VSSetConstantBuffers(0, 1, &rs->constant_buffer);
     rs->device_context->PSSetConstantBuffers(0, 1, &rs->constant_buffer);

@@ -19,7 +19,7 @@ struct Allocator
     }
 
     void*(*alloc_internal)(Allocator* alloc, uint32 size);
-    void*(*dealloc_internal)(Allocator* alloc, void* ptr);
+    void(*dealloc_internal)(Allocator* alloc, void* ptr);
     void(*out_of_scope)(Allocator* alloc);
     static const uint8 MaxAllocations = 128;
     void* allocations[MaxAllocations];

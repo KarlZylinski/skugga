@@ -84,6 +84,9 @@ void* alloc(uint32 size, uint32 align = memory::default_align)
 
 void dealloc(void* ptr)
 {
+    if (ptr == nullptr)
+        return;
+
     TempMemoryHeader* tmh = (TempMemoryHeader*)memory::ptr_sub(ptr, sizeof(TempMemoryHeader));
     tmh->freed = true;
 
@@ -117,6 +120,34 @@ void* alloc(Allocator* allocator, unsigned size)
     return p;
 }
 
+void dealloc(Allocator* allocator, void* ptr)
+{
+    if (ptr == nullptr)
+        return;
+    
+    temp_memory::dealloc(ptr);
+
+    for (uint32 i = 0; i < allocator->num_allocations; ++i)
+    {
+        if (allocator->allocations[i] == ptr)
+        {
+            uint32 last_index = allocator->num_allocations - 1;
+            if (allocator->num_allocations > 1 && i != last_index)
+            {
+                allocator->allocations[i] = allocator->allocations[last_index];
+                allocator->allocations[last_index] = nullptr;
+            }
+            else
+            {
+                allocator->allocations[i] = nullptr;
+            }
+
+            --allocator->num_allocations;
+            break;
+        }
+    }
+}
+
 void dealloc_all(Allocator* allocator)
 {
     for (uint8 i = 0; i < allocator->num_allocations; ++i)
@@ -132,5 +163,5 @@ void dealloc_all(Allocator* allocator)
 
 }
 
-#define create_temp_allocator() { temp_allocator::internal::alloc, nullptr, temp_allocator::internal::dealloc_all }
+#define create_temp_allocator() { temp_allocator::internal::alloc, temp_allocator::internal::dealloc, temp_allocator::internal::dealloc_all }
 
