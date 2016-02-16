@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <math.h>
+#include "types.h"
 
 #define memzero(ptr, type) memset(ptr, 0, sizeof(type))
 #define SmallNumber 0.0000001f

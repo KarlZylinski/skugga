@@ -124,17 +124,17 @@ void skip_line(ParserState* ps)
     }
 }
 
-ParsedData parse(uint8* data, uint32 data_size)
+ParsedData parse(Allocator* alloc, uint8* data, uint32 data_size)
 {
     ParserState ps = {0};
     ps.data = data;
     ps.head = data;
     ps.end = (uint8*)memory::ptr_add(data, data_size);
     ParsedData pd = {0};
-    pd.vertices = (Vector3*)temp_memory::alloc(sizeof(Vector3) * 128);
-    pd.uvs = (Vector2*)temp_memory::alloc(sizeof(Vector2) * 128);
-    pd.normals = (Vector3*)temp_memory::alloc(sizeof(Vector3) * 128);
-    pd.faces = (internal::ParsedFace*)temp_memory::alloc(sizeof(Vector3) * 128);
+    pd.vertices = (Vector3*)alloc->alloc(sizeof(Vector3) * 128);
+    pd.uvs = (Vector2*)alloc->alloc(sizeof(Vector2) * 128);
+    pd.normals = (Vector3*)alloc->alloc(sizeof(Vector3) * 128);
+    pd.faces = (internal::ParsedFace*)alloc->alloc(sizeof(Vector3) * 128);
 
     while (ps.head <  ps.end)
     {
@@ -191,17 +191,17 @@ void add_vertex_to_mesh(Mesh* m, const Vertex& v)
 
 }
 
-LoadedMesh load(const char* filename)
+LoadedMesh load(Allocator* alloc, const char* filename)
 {
-    LoadedFile lf = file::load(filename);
+    LoadedFile lf = file::load(alloc, filename);
 
     if (!lf.valid)
         return {false};
 
-    internal::ParsedData pd = internal::parse(lf.file.data, lf.file.size);
+    internal::ParsedData pd = internal::parse(alloc, lf.file.data, lf.file.size);
     Mesh m = {0};
-    m.vertices = (Vertex*)temp_memory::alloc(sizeof(Vertex) * 100);
-    m.indices = (uint32*)temp_memory::alloc(sizeof(uint32) * 100);
+    m.vertices = (Vertex*)alloc->alloc(sizeof(Vertex) * 100);
+    m.indices = (uint32*)alloc->alloc(sizeof(uint32) * 100);
 
     for (uint32 i = 0; i < pd.num_faces; ++i)
     {

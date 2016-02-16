@@ -3,7 +3,8 @@
 
 Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2)
 {
-    return Matrix4x4 {
+    return
+    {
         m1.x.x * m2.x.x + m1.x.y * m2.y.x + m1.x.z * m2.z.x + m1.x.w * m2.w.x,
         m1.x.x * m2.x.y + m1.x.y * m2.y.y + m1.x.z * m2.z.y + m1.x.w * m2.w.y,
         m1.x.x * m2.x.z + m1.x.y * m2.y.z + m1.x.z * m2.z.z + m1.x.w * m2.w.z,
@@ -34,7 +35,7 @@ void operator+=(Vector2& v1, const Vector2& v2)
 
 Vector2 operator+(const Vector2& v1, const Vector2& v2)
 {
-    return Vector2 {v1.x + v2.x, v1.y + v2.y};
+    return {v1.x + v2.x, v1.y + v2.y};
 }
 
 void operator+=(Vector2i& v1, const Vector2i& v2)
@@ -45,7 +46,7 @@ void operator+=(Vector2i& v1, const Vector2i& v2)
 
 Vector2i operator+(const Vector2i& v1, const Vector2i& v2)
 {
-    return Vector2i {v1.x + v2.x, v1.y + v2.y};
+    return {v1.x + v2.x, v1.y + v2.y};
 }
 
 void operator+=(Vector3& v1, const Vector3& v2)
@@ -57,17 +58,17 @@ void operator+=(Vector3& v1, const Vector3& v2)
 
 Vector3 operator+(const Vector3& v1, const Vector3& v2)
 {
-    return Vector3 {v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
+    return {v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
 }
 
 Vector3 operator*(const Vector3& v, float s)
 {
-    return Vector3 {v.x * s, v.y * s, v.z * s};
+    return {v.x * s, v.y * s, v.z * s};
 }
 
 Vector3 operator*(const Vector3& v1, const Vector3& v2)
 {
-    return Vector3 {v1.x * v2.x, v1.y * v2.y, v1.z * v2.z};
+    return {v1.x * v2.x, v1.y * v2.y, v1.z * v2.z};
 }
 
 void operator+=(Vector4& v1, const Vector4& v2)
@@ -85,17 +86,18 @@ Vector4 operator+(const Vector4& v1, const Vector4& v2)
 
 Vector4 operator*(const Vector4& v, float s)
 {
-    return Vector4 {v.x * s, v.y * s, v.z * s, v.w * s};
+    return {v.x * s, v.y * s, v.z * s, v.w * s};
 }
 
 Vector4 operator*(const Vector4& v1, const Vector4& v2)
 {
-    return Vector4 {v1.x * v2.x, v1.y * v2.y, v1.z * v2.z, v1.w * v2.w};
+    return {v1.x * v2.x, v1.y * v2.y, v1.z * v2.z, v1.w * v2.w};
 }
 
 Vector4 operator*(const Vector4& v, const Matrix4x4& m)
 {
-    return Vector4 {
+    return
+    {
         v.x * m.x.x + v.x * m.x.y + v.x * m.x.z + v.x * m.x.w,
         v.y * m.y.x + v.y * m.y.y + v.y * m.y.z + v.y * m.y.w,
         v.z * m.z.x + v.z * m.z.y + v.z * m.z.z + v.z * m.z.w,
@@ -105,7 +107,8 @@ Vector4 operator*(const Vector4& v, const Matrix4x4& m)
 
 Matrix4x4 operator*(const Matrix4x4& m, float s)
 {
-    return Matrix4x4 {
+    return
+    {
         s * m.x.x, s * m.x.y, s * m.x.z, s * m.x.w,
         s * m.y.x, s * m.y.y, s * m.y.z, s * m.y.w,
         s * m.z.x, s * m.z.y, s * m.z.z, s * m.z.w,
@@ -115,7 +118,7 @@ Matrix4x4 operator*(const Matrix4x4& m, float s)
 
 Vector4 operator-(const Vector4& v1, const Vector4& v2)
 {
-    return Vector4 {v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w};
+    return {v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w};
 }
 
 namespace matrix4x4
@@ -123,7 +126,7 @@ namespace matrix4x4
 
 Matrix4x4 identity()
 {
-    return Matrix4x4
+    return
     {
         1, 0, 0, 0,
         0, 1, 0, 0,

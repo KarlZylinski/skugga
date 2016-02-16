@@ -14,7 +14,6 @@ struct TempMemoryStorage
     uint32 capacity;
 };
 
-
 namespace memory
 {
 
@@ -66,7 +65,7 @@ void* alloc(uint32 size, uint32 align = memory::default_align)
     Assert(memory::ptr_diff(tms.start, tms.head + align + size + sizeof(TempMemoryHeader)) < tms.capacity, "Out of temp memory");
     TempMemoryHeader* tmh = (TempMemoryHeader*)memory::align_forward(tms.head, align);
     tmh->freed = false;
-    tmh->size = size;
+    tmh->size = size + align;
     
     if (tms.head == tms.start)
         tmh->prev = nullptr;
@@ -88,11 +87,11 @@ void dealloc(void* ptr)
     TempMemoryHeader* tmh = (TempMemoryHeader*)memory::ptr_sub(ptr, sizeof(TempMemoryHeader));
     tmh->freed = true;
 
-    if (memory::ptr_add(tmh, sizeof(TempMemoryHeader) + tmh->size) != tms.head)
+    // Are we the last block?
+    if (memory::align_forward(memory::ptr_add(ptr, tmh->size)) != tms.head)
         return;
 
     // Continue backwards in temp memory, rewinding other freed blocks.
-
     while (tmh != nullptr && tmh->freed)
     {
         tmh = tmh->prev;
@@ -103,7 +102,6 @@ void dealloc(void* ptr)
 
 }
 
-/*
 struct Allocator
 {
     ~Allocator()
@@ -112,59 +110,53 @@ struct Allocator
             out_of_scope(this);
     }
 
-    void*(*alloc)(Allocator* alloc, unsigned size);
-    void(*out_of_scope)(Allocator* alloc);
+    void* alloc(uint32 size)
+    {
+        return alloc_internal(this, size);
+    }
 
-    uint8* mem;
-    uint32 capacity;
+    void dealloc(void* ptr)
+    {
+        dealloc_internal(this, ptr);
+    }
+
+    void*(*alloc_internal)(Allocator* alloc, uint32 size);
+    void*(*dealloc_internal)(Allocator* alloc, void* ptr);
+    void(*out_of_scope)(Allocator* alloc);
+    static const uint8 MaxAllocations = 128;
+    void* allocations[MaxAllocations];
+    uint8 num_allocations;
 };
 
-
-namespace memory
+namespace temp_allocator
 {
 
-unsigned ptr_diff(void* ptr1, void* ptr2)
-{
-    return (unsigned)((uint8*)ptr2 - (uint8*)ptr1);
-}
-
-}
-
-TempMemoryStorage global_temp_memory;
-
-namespace temp_memory
+namespace internal
 {
 
-void init(void* start, unsigned capacity)
+void* alloc(Allocator* allocator, unsigned size)
 {
-    memset(&global_temp_memory, 0, sizeof(TempMemoryStorage));
-    global_temp_memory.start = (uint8*)start;
-    global_temp_memory.capacity = capacity;
-}
-
-void* alloc(unsigned size)
-{
-    Assert(memory::ptr_diff(global_temp_memory.start, global_temp_memory.start + global_temp_memory.head_offset + size) < global_temp_memory.capacity, "Out of temp memory");
-    void* p = global_temp_memory.start;
-    global_temp_memory.head_offset += size;
+    Assert(allocator->num_allocations + 1 < Allocator::MaxAllocations, "Too many allocations.");
+    void* p = temp_memory::alloc(size);
+    Assert(p != nullptr, "Failed to allocate memory.");
+    allocator->allocations[allocator->num_allocations++] = p;
     return p;
 }
 
-void out_of_scope(Allocator* allocator)
+void dealloc_all(Allocator* allocator)
 {
+    for (uint8 i = 0; i < allocator->num_allocations; ++i)
+    {
+        temp_memory::dealloc(allocator->allocations[i]);
+    }
+
+    memset(allocator->allocations, 0, sizeof(void*) * Allocator::MaxAllocations);
+    allocator->num_allocations = 0;
+}
 
 }
 
-Allocator create()
-{
-    Allocator allocator = {0};
-    allocator.alloc = alloc;
-    allocator.out_of_scope = allocator_out_of_scope;
 }
 
-void reset()
-{
-    global_temp_memory.head_offset = 0;
-}
+#define create_temp_allocator() { temp_allocator::internal::alloc, nullptr, temp_allocator::internal::dealloc_all }
 
-}*/

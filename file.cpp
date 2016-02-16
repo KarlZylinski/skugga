@@ -15,7 +15,7 @@ struct LoadedFile
 namespace file
 {
 
-LoadedFile load(const char* filename)
+LoadedFile load(Allocator* alloc, const char* filename)
 {
     FILE* file_handle = fopen(filename, "rb");
 
@@ -25,7 +25,7 @@ LoadedFile load(const char* filename)
     fseek(file_handle, 0, SEEK_END);
     uint32 filesize = ftell(file_handle);
     fseek(file_handle, 0, SEEK_SET);
-    uint8* data = (uint8*)temp_memory::alloc(uint32(filesize) + 1);
+    uint8* data = (uint8*)alloc->alloc(uint32(filesize) + 1);
 
     if (!data)
         return {false};
