@@ -1,3 +1,5 @@
+#include "renderer.h"
+
 struct Mesh
 {
     Vertex* vertices;

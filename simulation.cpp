@@ -1,3 +1,5 @@
+#include "world.h"
+
 struct SimulationState
 {
     Camera camera;

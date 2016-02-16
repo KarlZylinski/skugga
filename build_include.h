@@ -1,0 +1,13 @@
+#pragma once
+#include "camera.cpp"
+#include "color.cpp"
+#include "file.cpp"
+#include "keyboard.cpp"
+#include "math.cpp"
+#include "memory.cpp"
+#include "mouse.cpp"
+#include "obj.cpp"
+#include "renderer_direct3d.cpp"
+#include "simulation.cpp"
+#include "window.cpp"
+#include "world.cpp"

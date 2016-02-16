@@ -4,20 +4,8 @@
 #include "types.h"
 #include "helpers.h"
 
-// Unified build sources.
-#include "memory.cpp"
-#include "math.cpp"
-#include "window.cpp"
-#include "renderer.cpp"
-#include "renderer_direct3d.cpp"
-#include "file.cpp"
-#include "color.cpp"
-#include "world.cpp"
-#include "keyboard.cpp"
-#include "mouse.cpp"
-#include "camera.cpp"
-#include "obj.cpp"
-#include "simulation.cpp"
+// This must be last of the includes!
+#include "build_include.h"
 
 void key_pressed_callback(Key key)
 {
