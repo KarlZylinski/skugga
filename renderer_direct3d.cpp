@@ -10,6 +10,8 @@ struct Geometry {
 struct ConstantBuffer
 {
     Matrix4x4 model_view_projection;
+    Matrix4x4 model;
+    Matrix4x4 projection;
     Vector4 sun_position;
 };
 
@@ -220,6 +222,8 @@ void draw(RendererState* rs, unsigned geometry_handle, const Matrix4x4& world_tr
     auto geometry = rs->geometries[geometry_handle];
     ConstantBuffer constant_buffer_data = {};
     constant_buffer_data.model_view_projection = world_transform_matrix * view_matrix * projection_matrix;
+    constant_buffer_data.model = world_transform_matrix;
+    constant_buffer_data.projection = projection_matrix;
     constant_buffer_data.sun_position = {290, 200, -300, 1};
     renderer::set_constant_buffers(rs, constant_buffer_data);
     rs->device_context->VSSetConstantBuffers(0, 1, &rs->constant_buffer);

@@ -30,6 +30,13 @@ void init(Camera* c)
     };
     c->rotation = quaternion::identity();
     c->position.z = -5;
+
+    /*c->projection_matrix = {
+        -2, 0, 0, 0,
+        0, 2, 0, 0,
+        0, 0, 1, 0,
+        1, -1, 0, 1 
+    };*/
     recalc_view_matrix(c);
 }
 

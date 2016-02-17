@@ -42,7 +42,7 @@ int main()
     renderer::init(&renderer_state, window.handle);
     simulation::init(&simulation_state, &renderer_state);
     camera::init(&simulation_state.camera);
-    Color clear_color = {0.2f, 0, 0, 1};
+    Color clear_color = {0, 0, 0, 1};
 
     while(!window.closed)
     {
