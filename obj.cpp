@@ -3,8 +3,8 @@
 
 struct Mesh
 {
-    DynamicArray vertices;
-    DynamicArray indices;
+    DynamicArray<Vertex> vertices;
+    DynamicArray<uint32> indices;
 };
 
 struct LoadedMesh
@@ -41,10 +41,10 @@ struct ParsedFace
 
 struct ParsedData
 {
-    DynamicArray vertices;
-    DynamicArray uvs;
-    DynamicArray normals;
-    DynamicArray faces;
+    DynamicArray<Vector3> vertices;
+    DynamicArray<Vector3> normals;
+    DynamicArray<Vector2> uvs;
+    DynamicArray<ParsedFace> faces;
 };
 
 void skip_to_numeric(ParserState* ps)
@@ -57,7 +57,7 @@ void skip_to_numeric(ParserState* ps)
 
 void parse_uv(ParserState* ps, ParsedData* pd)
 {
-    Vector2* uv = array_push(&pd->uvs, Vector2);
+    Vector2* uv = pd->uvs.push();
     skip_to_numeric(ps);
     uv->x = strtof((const char*)ps->head, (char**)&ps->head);
     skip_to_numeric(ps);
@@ -66,7 +66,7 @@ void parse_uv(ParserState* ps, ParsedData* pd)
 
 void parse_normal(ParserState* ps, ParsedData* pd)
 {
-    Vector3* normal = array_push(&pd->normals, Vector3);
+    Vector3* normal = pd->normals.push();
     skip_to_numeric(ps);
     normal->x = strtof((const char*)ps->head, (char**)&ps->head);
     skip_to_numeric(ps);
@@ -77,7 +77,7 @@ void parse_normal(ParserState* ps, ParsedData* pd)
 
 void parse_vertex(ParserState* ps, ParsedData* pd)
 {
-    Vector3* vertex = array_push(&pd->vertices, Vector3);
+    Vector3* vertex = pd->vertices.push();
     skip_to_numeric(ps);
     vertex->x = strtof((const char*)ps->head, (char**)&ps->head);
     skip_to_numeric(ps);
@@ -88,7 +88,7 @@ void parse_vertex(ParserState* ps, ParsedData* pd)
 
 void parse_face(ParserState* ps, ParsedData* pd)
 {
-    ParsedFace* face = array_push(&pd->faces, ParsedFace);
+    ParsedFace* face = pd->faces.push();
     skip_to_numeric(ps);
     face->v1 = strtol((const char*)ps->head, (char**)&ps->head, 10) - 1;
     skip_to_numeric(ps);
@@ -121,15 +121,16 @@ void skip_line(ParserState* ps)
 
 ParsedData parse(Allocator* alloc, uint8* data, uint32 data_size)
 {
-    ParserState ps = {0};
+    ParserState ps = {};
     ps.data = data;
     ps.head = data;
     ps.end = (uint8*)memory::ptr_add(data, data_size);
-    ParsedData pd = {0};
-    pd.vertices = dynamic_array::create(alloc);
-    pd.uvs = dynamic_array::create(alloc);
-    pd.normals = dynamic_array::create(alloc);
-    pd.faces = dynamic_array::create(alloc);
+    ParsedData pd = {};
+    pd.vertices = {alloc};
+    pd.normals = {alloc};
+    pd.uvs = {alloc};
+    pd.faces = {alloc};
+    ps.head = ps.data;
 
     while (ps.head < ps.end)
     {
@@ -153,9 +154,9 @@ ParsedData parse(Allocator* alloc, uint8* data, uint32 data_size)
     return pd;
 }
 
-int32 get_existing_vertex(Vertex* vertices, uint32 num_vertices, const Vertex& v1)
+int32 get_existing_vertex(const DynamicArray<Vertex>& vertices, const Vertex& v1)
 {
-    for (uint32 i = 0; i < num_vertices; ++i)
+    for (uint32 i = 0; i < vertices.num; ++i)
     {
         const Vertex& v2 = vertices[i];
 
@@ -173,16 +174,16 @@ int32 get_existing_vertex(Vertex* vertices, uint32 num_vertices, const Vertex& v
 
 void add_vertex_to_mesh(Mesh* m, const Vertex& v)
 {
-    int32 i = get_existing_vertex(array_raw(m->vertices, Vertex), array_num(m->vertices, Vertex), v);
+    int32 i = get_existing_vertex(m->vertices, v);
 
     if (i != -1)
     {
-        *array_push(&m->indices, uint32) = i;
+        m->indices.add(i);
         return;
     }
 
-    *array_push(&m->indices, uint32) = array_num(m->vertices, Vertex);
-    *array_push(&m->vertices, Vertex) = v;
+    m->indices.add(m->vertices.num);
+    m->vertices.add(v);
 }
 
 }
@@ -195,21 +196,16 @@ LoadedMesh load(Allocator* alloc, const char* filename)
         return {false};
 
     internal::ParsedData pd = internal::parse(alloc, lf.file.data, lf.file.size);
-    Mesh m = {0};
-    m.vertices = dynamic_array::create(alloc);
-    m.indices = dynamic_array::create(alloc);
-    uint32 num_faces = array_num(pd.faces, internal::ParsedFace);
-    internal::ParsedFace* faces = array_raw(pd.faces, internal::ParsedFace);
-    Vector3* vertices = array_raw(pd.vertices, Vector3);
-    Vector3* normals = array_raw(pd.normals, Vector3);
-    Vector2* uvs = array_raw(pd.uvs, Vector2);
+    Mesh m = {};
+    m.vertices = {alloc};
+    m.indices = {alloc};
 
-    for (uint32 i = 0; i < num_faces; ++i)
+    for (uint32 i = 0; i < pd.faces.num; ++i)
     {
-        const internal::ParsedFace& f = faces[i];
-        internal::add_vertex_to_mesh(&m, {vertices[f.v1], normals[f.n1], uvs[f.u1], {1.0f, 1.0f, 1.0f, 1.0f}});
-        internal::add_vertex_to_mesh(&m, {vertices[f.v2], normals[f.n2], uvs[f.u2], {1.0f, 1.0f, 1.0f, 1.0f}});
-        internal::add_vertex_to_mesh(&m, {vertices[f.v3], normals[f.n3], uvs[f.u3], {1.0f, 1.0f, 1.0f, 1.0f}});
+        const internal::ParsedFace& f = pd.faces[i];
+        internal::add_vertex_to_mesh(&m, {pd.vertices[f.v1], pd.normals[f.n1], pd.uvs[f.u1], {1.0f, 1.0f, 1.0f, 1.0f}});
+        internal::add_vertex_to_mesh(&m, {pd.vertices[f.v2], pd.normals[f.n2], pd.uvs[f.u2], {1.0f, 1.0f, 1.0f, 1.0f}});
+        internal::add_vertex_to_mesh(&m, {pd.vertices[f.v3], pd.normals[f.n3], pd.uvs[f.u3], {1.0f, 1.0f, 1.0f, 1.0f}});
     }
 
     return {true, m};

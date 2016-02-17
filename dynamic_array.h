@@ -2,25 +2,80 @@
 
 struct Allocator;
 
+template<typename T>
 struct DynamicArray
 {
-    uint8* data;
-    uint32 size;
-    uint32 capacity;
     Allocator* allocator;
+    T* data;
+    uint32 num;
+    uint32 capacity;
+
+    void grow()
+    {
+        T* old_data = data;
+        uint32 new_capacity = max(capacity * 2, num + 5);
+        data = (T*)allocator->alloc(new_capacity * sizeof(T));
+        memcpy(data, old_data, num * sizeof(T));
+        allocator->dealloc(old_data);
+        capacity = new_capacity;
+    }
+
+    void add(const T& v)
+    {
+        if (data == nullptr || num == capacity)
+            grow();
+
+        *(data + num) = v;
+        ++num;
+    }
+
+    T* push()
+    {
+        if (data == nullptr || num == capacity)
+            grow();
+
+        T* p = data + num;
+        ++num;
+        return p;
+    }
+
+    void remove(uint32 i)
+    {
+        if (num == 1 || (num > 1 && i == num - 1))
+        {
+            --num;
+            return;
+        }
+
+        memcpy(data + i, data + num - 1, sizeof(T));
+        --num;
+    }
+
+    DynamicArray<T> clone(Allocator* new_allocator = nullptr) const
+    {
+        Allocator* allocator_to_use = new_allocator == nullptr ? allocator : new_allocator;
+        DynamicArray<T> c = {allocator_to_use};
+        c.data = (T*)allocator_to_use->alloc(num * sizeof(T));
+        c.capacity = num;
+        c.num = num;
+        memcpy(c.data, data, num * sizeof(T));
+        return c;
+    }
+
+    T* clone_raw(Allocator* alloc = nullptr) const
+    {
+        T* p = (T*)(alloc == nullptr ? allocator : alloc)->alloc(num * sizeof(T));
+        memcpy(p, data, num * sizeof(T));
+        return p;
+    }
+
+    T& operator[](uint32 i)
+    {
+        return data[i];
+    }
+
+    const T& operator[](uint32 i) const
+    {
+        return data[i];
+    }
 };
-
-
-namespace dynamic_array
-{
-
-void* array_push_raw(DynamicArray* da, uint32 size);
-DynamicArray create(Allocator* allocator);
-void destroy(DynamicArray* da);
-
-}
-
-#define array_push(array, type) (type*)dynamic_array::array_push_raw(array, sizeof(type))
-#define array_num(array, type) (array.size / sizeof(type))
-#define array_raw(array, type) (type*)array.data
-#define array_get(array, type, index) ((type*)(array.data + sizeof(type) * index))

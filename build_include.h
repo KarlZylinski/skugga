@@ -1,7 +1,6 @@
 #pragma once
 #include "camera.cpp"
 #include "color.cpp"
-#include "dynamic_array.cpp"
 #include "file.cpp"
 #include "keyboard.cpp"
 #include "math.cpp"
