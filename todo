@@ -2,8 +2,8 @@
     figure out a way to get rid of the array of allocations
     add stack allocation for small allocations (4kb?)
 
-- revamp dynamic array
-    maybe have a header before start of data block with size info etc?
-    or templates?
+- refactor renderer
+    maybe make renderer_direct3d into it's own compilation unit so it's totally separate? make a c renderer interface with function ptrs that the direct3d renderer has to comply with. make d3d renderer only return renderer_handles.
+    add renderer world to which stuff is added and removed, everything in it is rendered
 
 - research lightmap uv unwrapping
