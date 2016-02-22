@@ -40,7 +40,7 @@ if build then
         cmd = cmd .. " && "
     end
 
-    cmd = cmd .. "cl.exe /D _HAS_EXCEPTIONS=0 /W4 /WX /TP /DUNICODE /wd4201 /wd4100 /D _CRT_SECURE_NO_WARNINGS /Zi /MTd /D DEBUG main.cpp /link /subsystem:windows /entry:mainCRTStartup /incremental:no d3d11.lib user32.lib D3DCompiler.lib /out:skugga.exe"
+    cmd = cmd .. "cl.exe /D _HAS_EXCEPTIONS=0 /W4 /WX /TP /DUNICODE /wd4201 /wd4100 /D _CRT_SECURE_NO_WARNINGS /Zi /MTd /D DEBUG main.cpp /link /subsystem:windows /entry:mainCRTStartup /incremental:no d3d11.lib user32.lib dxgi.lib D3DCompiler.lib /out:skugga.exe"
 end
 
 if run then

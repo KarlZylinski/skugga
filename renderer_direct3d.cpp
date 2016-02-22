@@ -20,12 +20,22 @@ namespace renderer
     static const unsigned num_resources = 4096;
 }
 
-struct RendererState
+enum class RenderTargetType
+{
+    back_buffer,
+    render_texture
+};
+
+struct SwapChain
 {
     IDXGISwapChain* swapchain;
+    ID3D11RenderTargetView* view;
+};
+
+struct RendererState
+{
     ID3D11Device* device;
     ID3D11DeviceContext* device_context;
-    ID3D11RenderTargetView* back_buffer;
     ID3D11InputLayout* input_layout;
     ID3D11VertexShader* vertex_shader;
     ID3D11PixelShader* pixel_shader;
@@ -40,34 +50,21 @@ namespace renderer
 
 void unload_geometry(RendererState* rs, unsigned geometry_handle);
 
-void init(RendererState* rs, HWND output_window_handle)
+void init(RendererState* rs)
 {
-    DXGI_SWAP_CHAIN_DESC scd = {0};
-    scd.BufferCount = 1;
-    scd.BufferDesc.Width = 800;
-    scd.BufferDesc.Height = 800;
-    scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    scd.OutputWindow = output_window_handle;
-    scd.SampleDesc.Count = 1;
-    scd.Windowed = true;
-    D3D11CreateDeviceAndSwapChain(
+    D3D11CreateDevice(
         nullptr,
         D3D_DRIVER_TYPE_HARDWARE,
         nullptr,
-        0,
-        0,
+        D3D11_CREATE_DEVICE_SINGLETHREADED,
+        nullptr,
         0,
         D3D11_SDK_VERSION,
-        &scd,
-        &rs->swapchain,
         &rs->device,
         nullptr,
-        &rs->device_context);
-    ID3D11Texture2D* back_buffer_texture;
-    rs->swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer_texture);
-    rs->device->CreateRenderTargetView(back_buffer_texture, nullptr, &rs->back_buffer);
-    back_buffer_texture->Release();
+        &rs->device_context
+    );
+
     D3D11_VIEWPORT viewport = {0};
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
@@ -118,7 +115,6 @@ void init(RendererState* rs, HWND output_window_handle)
     dsvd.Texture2D.MipSlice = 0;
     dsvd.Flags = 0;
     rs->device->CreateDepthStencilView(rs->depth_stencil_texture, &dsvd, &rs->depth_stencil_view);
-    rs->device_context->OMSetRenderTargets(1, &rs->back_buffer, rs->depth_stencil_view);
 }
 
 void shutdown(RendererState* rs)
@@ -133,14 +129,39 @@ void shutdown(RendererState* rs)
 
     rs->depth_stencil_texture->Release();
     rs->depth_stencil_view->Release();
-    rs->swapchain->Release();
     rs->input_layout->Release();
     rs->vertex_shader->Release();
     rs->pixel_shader->Release();
-    rs->swapchain->Release();
-    rs->back_buffer->Release();
     rs->device->Release();
     rs->device_context->Release();
+}
+
+SwapChain create_swapchain(RendererState* rs, HWND window_handle)
+{
+    DXGI_SWAP_CHAIN_DESC scd = {};
+    scd.BufferCount = 1;
+    scd.BufferDesc.Width = 800;
+    scd.BufferDesc.Height = 800;
+    scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    scd.OutputWindow = window_handle;
+    scd.SampleDesc.Count = 1;
+    scd.Windowed = true;
+    SwapChain sc = {};
+
+    IDXGIFactory* dxgi_factory;
+    CreateDXGIFactory( __uuidof(IDXGIFactory), (void**)(&dxgi_factory) );
+    dxgi_factory->CreateSwapChain(
+        rs->device,
+        &scd,
+        &sc.swapchain
+    );
+
+    ID3D11Texture2D* back_buffer_texture;
+    sc.swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer_texture);
+    rs->device->CreateRenderTargetView(back_buffer_texture, nullptr, &sc.view);
+    back_buffer_texture->Release();
+    return sc;
 }
 
 void set_constant_buffers(RendererState* rs, const ConstantBuffer& data)
@@ -217,6 +238,11 @@ void unload_geometry(RendererState* rs, unsigned geometry_handle)
     memset(rs->geometries + geometry_handle, 0, sizeof(Geometry));
 }
 
+void set_swapchain(RendererState* rs, SwapChain* sc)
+{
+    rs->device_context->OMSetRenderTargets(1, &sc->view, rs->depth_stencil_view);
+}
+
 void draw(RendererState* rs, unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)
 {
     auto geometry = rs->geometries[geometry_handle];
@@ -236,14 +262,18 @@ void draw(RendererState* rs, unsigned geometry_handle, const Matrix4x4& world_tr
     rs->device_context->DrawIndexed(geometry.num_indices, 0, 0);
 }
 
-void clear(RendererState* rs, const Color& color)
+void clear_depth_stencil(RendererState* rs)
 {
-    rs->device_context->ClearRenderTargetView(rs->back_buffer, &color.r);
     rs->device_context->ClearDepthStencilView(rs->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
-void present(RendererState* rs)
+void clear_swapchain(RendererState* rs, SwapChain* sc, const Color& color)
 {
-    rs->swapchain->Present(0, 0);
+    rs->device_context->ClearRenderTargetView(sc->view, &color.r);
+}
+
+void present(SwapChain* sc)
+{
+    sc->swapchain->Present(0, 0);
 }
 } // namespace renderer

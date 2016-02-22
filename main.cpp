@@ -39,7 +39,9 @@ int main()
     window.mouse_moved_callback = mouse_moved_callback;
     RendererState renderer_state = {0};
     SimulationState simulation_state = {0};
-    renderer::init(&renderer_state, window.handle);
+    renderer::init(&renderer_state);
+    SwapChain swap_chain = renderer::create_swapchain(&renderer_state, window.handle);
+    renderer::set_swapchain(&renderer_state, &swap_chain);
     simulation::init(&simulation_state, &renderer_state);
     camera::init(&simulation_state.camera);
     Color clear_color = {0, 0, 0, 1};
@@ -48,7 +50,8 @@ int main()
     {
         window::process_all_messsages();
         simulation::simulate(&simulation_state);
-        renderer::clear(&renderer_state, clear_color);
+        renderer::clear_depth_stencil(&renderer_state);
+        renderer::clear_swapchain(&renderer_state, &swap_chain, clear_color);
 
         for (unsigned i = 0; i < simulation_state.world.num_objects; ++i)
         {
@@ -58,7 +61,7 @@ int main()
 
         keyboard::end_of_frame();
         mouse::end_of_frame();
-        renderer::present(&renderer_state);
+        renderer::present(&swap_chain);
     }
 
     renderer::shutdown(&renderer_state);
