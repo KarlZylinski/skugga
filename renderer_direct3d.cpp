@@ -22,13 +22,14 @@ namespace renderer
 
 enum class RenderTargetType
 {
-    back_buffer,
+    swap_chain,
     render_texture
 };
 
-struct SwapChain
+struct RenderTarget
 {
-    IDXGISwapChain* swapchain;
+    RenderTargetType type;
+    IDXGISwapChain* swap_chain;
     ID3D11RenderTargetView* view;
 };
 
@@ -136,7 +137,7 @@ void shutdown(RendererState* rs)
     rs->device_context->Release();
 }
 
-SwapChain create_swapchain(RendererState* rs, HWND window_handle)
+RenderTarget create_swap_chain(RendererState* rs, HWND window_handle)
 {
     DXGI_SWAP_CHAIN_DESC scd = {};
     scd.BufferCount = 1;
@@ -147,21 +148,22 @@ SwapChain create_swapchain(RendererState* rs, HWND window_handle)
     scd.OutputWindow = window_handle;
     scd.SampleDesc.Count = 1;
     scd.Windowed = true;
-    SwapChain sc = {};
-
+    RenderTarget rt = {};
     IDXGIFactory* dxgi_factory;
-    CreateDXGIFactory( __uuidof(IDXGIFactory), (void**)(&dxgi_factory) );
+    CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&dxgi_factory));
+
     dxgi_factory->CreateSwapChain(
         rs->device,
         &scd,
-        &sc.swapchain
+        &rt.swap_chain
     );
 
     ID3D11Texture2D* back_buffer_texture;
-    sc.swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer_texture);
-    rs->device->CreateRenderTargetView(back_buffer_texture, nullptr, &sc.view);
+    rt.swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer_texture);
+    rs->device->CreateRenderTargetView(back_buffer_texture, nullptr, &rt.view);
     back_buffer_texture->Release();
-    return sc;
+    rt.type = RenderTargetType::swap_chain;
+    return rt;
 }
 
 void set_constant_buffers(RendererState* rs, const ConstantBuffer& data)
@@ -238,9 +240,14 @@ void unload_geometry(RendererState* rs, unsigned geometry_handle)
     memset(rs->geometries + geometry_handle, 0, sizeof(Geometry));
 }
 
-void set_swapchain(RendererState* rs, SwapChain* sc)
+void set_swap_chain(RendererState* rs, RenderTarget* rt)
 {
-    rs->device_context->OMSetRenderTargets(1, &sc->view, rs->depth_stencil_view);
+    switch (rt->type)
+    {
+    case RenderTargetType::swap_chain:
+        rs->device_context->OMSetRenderTargets(1, &rt->view, rs->depth_stencil_view);
+        break;
+    }
 }
 
 void draw(RendererState* rs, unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)
@@ -267,13 +274,13 @@ void clear_depth_stencil(RendererState* rs)
     rs->device_context->ClearDepthStencilView(rs->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
-void clear_swapchain(RendererState* rs, SwapChain* sc, const Color& color)
+void clear_render_target(RendererState* rs, RenderTarget* sc, const Color& color)
 {
     rs->device_context->ClearRenderTargetView(sc->view, &color.r);
 }
 
-void present(SwapChain* sc)
+void present(RenderTarget* rt)
 {
-    sc->swapchain->Present(0, 0);
+    rt->swap_chain->Present(0, 0);
 }
 } // namespace renderer
