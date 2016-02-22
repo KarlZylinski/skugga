@@ -37,7 +37,7 @@ LoadedFile load(Allocator* alloc, const char* filename)
     File file = {0};
     file.data = data;
     file.size = filesize;
-    return { true, file };
+    return {true, file};
 }
 
-}
+} // namespace file
