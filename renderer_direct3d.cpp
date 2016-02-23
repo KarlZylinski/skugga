@@ -20,16 +20,10 @@ namespace renderer
     static const unsigned num_resources = 4096;
 }
 
-enum class RenderTargetType
-{
-    swap_chain,
-    render_texture
-};
-
 struct RenderTarget
 {
-    RenderTargetType type;
-    IDXGISwapChain* swap_chain;
+    ID3D11Texture2D* texture;
+    PixelFormat pixel_format;
     ID3D11RenderTargetView* view;
 };
 
@@ -43,15 +37,32 @@ struct RendererState
     ID3D11Buffer* constant_buffer;
     ID3D11Texture2D* depth_stencil_texture;
     ID3D11DepthStencilView* depth_stencil_view;
+    IDXGISwapChain* swap_chain;
     Geometry geometries[renderer::num_resources];
 };
 
 namespace renderer
 {
 
+namespace internal
+{
+
+DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
+{
+    switch(pf)
+    {
+    case PixelFormat::R8G8B8A8_UINT_NORM:
+        return DXGI_FORMAT_R8G8B8A8_UNORM;
+    default:
+        return DXGI_FORMAT_UNKNOWN;
+    }
+}
+
+} // namespace internal
+
 void unload_geometry(RendererState* rs, unsigned geometry_handle);
 
-void init(RendererState* rs)
+void init(RendererState* rs, HWND window_handle)
 {
     D3D11CreateDevice(
         nullptr,
@@ -64,6 +75,24 @@ void init(RendererState* rs)
         &rs->device,
         nullptr,
         &rs->device_context
+    );
+
+    DXGI_SWAP_CHAIN_DESC scd = {};
+    scd.BufferCount = 1;
+    scd.BufferDesc.Width = 800;
+    scd.BufferDesc.Height = 800;
+    scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    scd.OutputWindow = window_handle;
+    scd.SampleDesc.Count = 1;
+    scd.Windowed = true;
+    IDXGIFactory* dxgi_factory;
+    CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&dxgi_factory));
+
+    dxgi_factory->CreateSwapChain(
+        rs->device,
+        &scd,
+        &rs->swap_chain
     );
 
     D3D11_VIEWPORT viewport = {0};
@@ -137,32 +166,45 @@ void shutdown(RendererState* rs)
     rs->device_context->Release();
 }
 
-RenderTarget create_swap_chain(RendererState* rs, HWND window_handle)
+RenderTarget create_back_buffer(RendererState* rs)
 {
-    DXGI_SWAP_CHAIN_DESC scd = {};
-    scd.BufferCount = 1;
-    scd.BufferDesc.Width = 800;
-    scd.BufferDesc.Height = 800;
-    scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    scd.OutputWindow = window_handle;
-    scd.SampleDesc.Count = 1;
-    scd.Windowed = true;
     RenderTarget rt = {};
-    IDXGIFactory* dxgi_factory;
-    CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&dxgi_factory));
-
-    dxgi_factory->CreateSwapChain(
-        rs->device,
-        &scd,
-        &rt.swap_chain
-    );
-
     ID3D11Texture2D* back_buffer_texture;
-    rt.swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer_texture);
+    rs->swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer_texture);
+
+    D3D11_TEXTURE2D_DESC td = {};
+    back_buffer_texture->GetDesc(&td);
+
     rs->device->CreateRenderTargetView(back_buffer_texture, nullptr, &rt.view);
     back_buffer_texture->Release();
-    rt.type = RenderTargetType::swap_chain;
+    return rt;
+}
+
+RenderTarget create_render_texture(RendererState* rs, PixelFormat pf)
+{
+    DXGI_SWAP_CHAIN_DESC scd = {};
+    rs->swap_chain->GetDesc(&scd);
+    D3D11_TEXTURE2D_DESC rtd = {};
+    rtd.Width = scd.BufferDesc.Width;
+    rtd.Height = scd.BufferDesc.Height;
+    rtd.MipLevels = 1;
+    rtd.ArraySize = 1;
+    rtd.Format = internal::pixel_format_to_dxgi_format(pf);
+    rtd.SampleDesc.Count = 1;
+    rtd.Usage = D3D11_USAGE_DEFAULT;
+    rtd.BindFlags = D3D11_BIND_RENDER_TARGET;
+    rtd.CPUAccessFlags = 0;
+    rtd.MiscFlags = 0;
+    ID3D11Texture2D* texture;
+    rs->device->CreateTexture2D(&rtd, NULL, &texture);
+    D3D11_RENDER_TARGET_VIEW_DESC rtvd = {};
+    rtvd.Format = rtd.Format;
+    rtvd.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+    rtvd.Texture2D.MipSlice = 0;
+    RenderTarget rt = {};
+    rt.texture = texture;
+    rt.pixel_format = pf;
+    rs->device->CreateRenderTargetView(texture, &rtvd, &rt.view);
     return rt;
 }
 
@@ -240,14 +282,9 @@ void unload_geometry(RendererState* rs, unsigned geometry_handle)
     memset(rs->geometries + geometry_handle, 0, sizeof(Geometry));
 }
 
-void set_swap_chain(RendererState* rs, RenderTarget* rt)
+void set_render_target(RendererState* rs, RenderTarget* rt)
 {
-    switch (rt->type)
-    {
-    case RenderTargetType::swap_chain:
-        rs->device_context->OMSetRenderTargets(1, &rt->view, rs->depth_stencil_view);
-        break;
-    }
+    rs->device_context->OMSetRenderTargets(1, &rt->view, rs->depth_stencil_view);
 }
 
 void draw(RendererState* rs, unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)
@@ -279,8 +316,33 @@ void clear_render_target(RendererState* rs, RenderTarget* sc, const Color& color
     rs->device_context->ClearRenderTargetView(sc->view, &color.r);
 }
 
-void present(RenderTarget* rt)
+void present(RendererState* rs)
 {
-    rt->swap_chain->Present(0, 0);
+    rs->swap_chain->Present(0, 0);
 }
+
+Image read_back_texture(Allocator* alloc, RendererState* rs, const RenderTarget& rt)
+{
+    D3D11_TEXTURE2D_DESC rtd = {};
+    rt.texture->GetDesc(&rtd);
+    rtd.Usage = D3D11_USAGE_STAGING;
+    rtd.BindFlags = 0;
+    rtd.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    ID3D11Texture2D* staging_texture;
+    rs->device->CreateTexture2D(&rtd, NULL, &staging_texture);
+    rs->device_context->CopyResource(staging_texture, rt.texture);
+    D3D11_MAPPED_SUBRESOURCE mapped_resource;
+    rs->device_context->Map(staging_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
+    uint32 size = image::calc_size(rt.pixel_format, rtd.Width, rtd.Height);
+    uint8* p = (uint8*)alloc->alloc(size);
+    memcpy(p, mapped_resource.pData, size);
+    rs->device_context->Unmap(staging_texture, 0);
+    Image i = {};
+    i.pixel_format = rt.pixel_format;
+    i.width = rtd.Width;
+    i.height = rtd.Height;
+    i.data = p;
+    return i;
+}
+
 } // namespace renderer

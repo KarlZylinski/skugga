@@ -1,6 +1,6 @@
 #pragma once
 
-enum class Key
+enum struct Key
 {
     Unknown,
     A,

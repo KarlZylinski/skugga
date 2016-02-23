@@ -2,6 +2,7 @@
 #include "camera.cpp"
 #include "color.cpp"
 #include "file.cpp"
+#include "image.cpp"
 #include "keyboard.cpp"
 #include "math.cpp"
 #include "memory.cpp"

@@ -1,5 +1,5 @@
 #include <windows.h>
-#include <ctime>
+#include <time.h>
 #include "object.h"
 #include "types.h"
 #include "helpers.h"
@@ -39,9 +39,10 @@ int main()
     window.mouse_moved_callback = mouse_moved_callback;
     RendererState renderer_state = {0};
     SimulationState simulation_state = {0};
-    renderer::init(&renderer_state);
-    RenderTarget swap_chain = renderer::create_swap_chain(&renderer_state, window.handle);
-    renderer::set_swap_chain(&renderer_state, &swap_chain);
+    renderer::init(&renderer_state, window.handle);
+    RenderTarget back_buffer = renderer::create_back_buffer(&renderer_state);
+    RenderTarget render_texture = renderer::create_render_texture(&renderer_state, PixelFormat::R8G8B8A8_UINT_NORM);
+    renderer::set_render_target(&renderer_state, &back_buffer);
     simulation::init(&simulation_state, &renderer_state);
     camera::init(&simulation_state.camera);
     Color clear_color = {0, 0, 0, 1};
@@ -51,7 +52,7 @@ int main()
         window::process_all_messsages();
         simulation::simulate(&simulation_state);
         renderer::clear_depth_stencil(&renderer_state);
-        renderer::clear_render_target(&renderer_state, &swap_chain, clear_color);
+        renderer::clear_render_target(&renderer_state, &back_buffer, clear_color);
 
         for (unsigned i = 0; i < simulation_state.world.num_objects; ++i)
         {
@@ -61,8 +62,17 @@ int main()
 
         keyboard::end_of_frame();
         mouse::end_of_frame();
-        renderer::present(&swap_chain);
+        renderer::present(&renderer_state);
     }
+
+    /*{
+        Allocator ta = create_temp_allocator();
+        Image i = renderer::read_back_texture(&ta, &renderer_state, render_texture);
+        File out = {};
+        out.data = i.data;
+        out.size = image::calc_size(i.pixel_format, i.width, i.height);
+        file::write(out, "texture");
+    }*/
 
     renderer::shutdown(&renderer_state);
     return 0;
