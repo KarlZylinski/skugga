@@ -10,5 +10,5 @@
 #include "obj.cpp"
 #include "renderer_direct3d.cpp"
 #include "simulation.cpp"
-#include "window.cpp"
+#include "windows_window.cpp"
 #include "world.cpp"

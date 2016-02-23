@@ -25,3 +25,10 @@ struct Allocator
     void* allocations[MaxAllocations];
     uint8 num_allocations;
 };
+
+namespace temp_memory
+{
+
+const uint32 TempMemorySize = 1024 * 1024 * 1024;
+
+}

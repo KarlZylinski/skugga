@@ -12,6 +12,11 @@ Keyboard keyboard_state;
 namespace keyboard
 {
 
+void init()
+{
+    memzero(&keyboard_state, Keyboard);
+}
+
 bool held(Key key)
 {
     return keyboard_state.held[(unsigned)key];

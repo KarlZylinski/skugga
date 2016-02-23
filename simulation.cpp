@@ -1,4 +1,5 @@
 #include "world.h"
+#include "window.h"
 
 struct SimulationState
 {
@@ -49,11 +50,34 @@ void create_world(World* world, RendererState* rs)
     create_scaled_box(world, rs, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random());
 }
 
+void key_pressed_callback(Key key)
+{
+    keyboard_state.pressed[(unsigned)key] = true;
+    keyboard_state.held[(unsigned)key] = true;
 }
 
-void init(SimulationState* ss, RendererState* rs)
+void key_released_callback(Key key)
 {
+    keyboard_state.released[(unsigned)key] = true;
+    keyboard_state.held[(unsigned)key] = false;
+}
+
+void mouse_moved_callback(const Vector2i& delta)
+{
+    mouse_state.delta += delta;
+}
+
+} // namespace internal
+
+void init(SimulationState* ss, RendererState* rs, Window* w)
+{
+    keyboard::init();
+    mouse::init();
+    w->key_released_callback = internal::key_released_callback;
+    w->key_pressed_callback = internal::key_pressed_callback;
+    w->mouse_moved_callback = internal::mouse_moved_callback;
     internal::create_world(&ss->world, rs);
+    camera::init(&ss->camera);
 }
 
 void simulate(SimulationState* ss)

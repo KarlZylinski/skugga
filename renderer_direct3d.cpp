@@ -1,5 +1,6 @@
 #include <d3d11.h>
 #include <D3Dcompiler.h>
+#include "world.h"
 
 struct Geometry {
     ID3D11Buffer* vertices;
@@ -38,6 +39,7 @@ struct RendererState
     ID3D11Texture2D* depth_stencil_texture;
     ID3D11DepthStencilView* depth_stencil_view;
     IDXGISwapChain* swap_chain;
+    RenderTarget back_buffer;
     Geometry geometries[renderer::num_resources];
 };
 
@@ -61,6 +63,8 @@ DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
 } // namespace internal
 
 void unload_geometry(RendererState* rs, unsigned geometry_handle);
+RenderTarget create_back_buffer(RendererState* rs);
+void set_render_target(RendererState* rs, RenderTarget* rt);
 
 void init(RendererState* rs, HWND window_handle)
 {
@@ -145,6 +149,9 @@ void init(RendererState* rs, HWND window_handle)
     dsvd.Texture2D.MipSlice = 0;
     dsvd.Flags = 0;
     rs->device->CreateDepthStencilView(rs->depth_stencil_texture, &dsvd, &rs->depth_stencil_view);
+
+    rs->back_buffer = create_back_buffer(rs);
+    set_render_target(rs, &rs->back_buffer);
 }
 
 void shutdown(RendererState* rs)
@@ -343,6 +350,21 @@ Image read_back_texture(Allocator* alloc, RendererState* rs, const RenderTarget&
     i.height = rtd.Height;
     i.data = p;
     return i;
+}
+
+void draw_frame(RendererState* rs, const World& world, const Camera& camera)
+{
+    Color r = {0.2f, 0, 0, 1};
+    clear_depth_stencil(rs);
+    clear_render_target(rs, &rs->back_buffer, r);
+
+    for (unsigned i = 0; i < world.num_objects; ++i)
+    {
+        if (world.objects[i].valid)
+            renderer::draw(rs, world.objects[i].geometry_handle, world.objects[i].world_transform, camera.view_matrix, camera.projection_matrix);
+    }
+
+    renderer::present(rs);
 }
 
 } // namespace renderer

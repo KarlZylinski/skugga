@@ -1,23 +1,14 @@
 #include "key.h"
 
-namespace window
-{
-
-typedef void(*KeyPressedCallback)(Key key);
-typedef void(*KeyReleasedCallback)(Key key);
-typedef void(*MouseMovedCalledback)(const Vector2i& delta);
-
-} // namespace window
-
-struct Window
+struct WindowsWindow
 {
     HWND handle;
     WNDCLASSEX window_class;
-    bool closed;
-    window::KeyPressedCallback key_pressed_callback;
-    window::KeyReleasedCallback key_released_callback;
-    window::MouseMovedCalledback mouse_moved_callback;
+    Window window;
 };
+
+namespace windows
+{
 
 namespace window
 {
@@ -140,10 +131,12 @@ Key key_from_windows_key_code(WPARAM key, LPARAM flags)
 
 LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPARAM lparam)
 {
-    Window* window = (Window*)GetWindowLongPtr(window_handle, GWLP_USERDATA);
+    WindowsWindow* windows_window = (WindowsWindow*)GetWindowLongPtr(window_handle, GWLP_USERDATA);
 
-    if (window == nullptr)
+    if (windows_window == nullptr)
         return DefWindowProc(window_handle, message, wparam, lparam);
+
+    Window* window = &windows_window->window;
 
     switch(message)
     {
@@ -189,7 +182,7 @@ LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPARAM lpar
 
 } // namespace internal
 
-void init(Window* w)
+void init(WindowsWindow* w)
 {
     HINSTANCE instance_handle = GetModuleHandle(nullptr);
     WNDCLASSEX wc = {0};
@@ -235,4 +228,7 @@ void process_all_messsages()
         DispatchMessage(&message);
     }
 }
+
 } // namespace window
+
+} // namespace windows

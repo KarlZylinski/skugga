@@ -10,6 +10,11 @@ Mouse mouse_state;
 namespace mouse
 {
 
+void init()
+{
+    memzero(&mouse_state, Mouse);
+}
+
 const Vector2i& delta()
 {
     return mouse_state.delta;
