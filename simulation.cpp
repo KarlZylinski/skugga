@@ -1,5 +1,5 @@
 #include "world.h"
-#include "window.h"
+#include "window_state.h"
 
 struct SimulationState
 {
@@ -69,13 +69,13 @@ void mouse_moved_callback(const Vector2i& delta)
 
 } // namespace internal
 
-void init(SimulationState* ss, RendererState* rs, Window* w)
+void init(SimulationState* ss, RendererState* rs, WindowState* window_state)
 {
     keyboard::init();
     mouse::init();
-    w->key_released_callback = internal::key_released_callback;
-    w->key_pressed_callback = internal::key_pressed_callback;
-    w->mouse_moved_callback = internal::mouse_moved_callback;
+    window_state->key_released_callback = internal::key_released_callback;
+    window_state->key_pressed_callback = internal::key_pressed_callback;
+    window_state->mouse_moved_callback = internal::mouse_moved_callback;
     internal::create_world(&ss->world, rs);
     camera::init(&ss->camera);
 }

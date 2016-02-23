@@ -12,15 +12,15 @@ int main()
     void* temp_memory_block = VirtualAlloc(nullptr, temp_memory::TempMemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     temp_memory::init(temp_memory_block, temp_memory::TempMemorySize);
     
-    WindowsWindow windows_window = {};
-    windows::window::init(&windows_window);
+    windows::Window window = {};
+    windows::window::init(&window);
     RendererState renderer_state = {};
     SimulationState simulation_state = {};
-    renderer::init(&renderer_state, windows_window.handle);
-    simulation::init(&simulation_state, &renderer_state, &windows_window.window);
+    renderer::init(&renderer_state, window.handle);
+    simulation::init(&simulation_state, &renderer_state, &window.state);
 
     //RenderTarget render_texture = create_render_texture(rs, PixelFormat::R8G8B8A8_UINT_NORM);
-    while(!windows_window.window.closed)
+    while(!window.state.closed)
     {
         windows::window::process_all_messsages();
         simulation::simulate(&simulation_state);

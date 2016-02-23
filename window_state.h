@@ -7,7 +7,7 @@ typedef void(*MouseMovedCalledback)(const Vector2i& delta);
 
 } // namespace window
 
-struct Window
+struct WindowState
 {
     bool closed;
     window::KeyPressedCallback key_pressed_callback;

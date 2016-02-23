@@ -7,5 +7,3 @@ struct Vertex
     Vector2 uv;
     Color color;
 };
-
-
