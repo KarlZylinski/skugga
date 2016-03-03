@@ -4,3 +4,4 @@
 *.dll
 .vs/
 *.ilk
+*.suo

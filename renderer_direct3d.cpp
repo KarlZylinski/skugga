@@ -62,25 +62,24 @@ DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
 
 } // namespace internal
 
+void check_ok(HRESULT res)
+{
+    if (res >= 0)
+    {
+        return;
+    }
+
+    static wchar msg[120];
+    wsprintf(msg, L"Error in renderer: %0x", res);
+    MessageBox(nullptr, msg, nullptr, 0);
+}
+
 void unload_geometry(RendererState* rs, unsigned geometry_handle);
 RenderTarget create_back_buffer(RendererState* rs);
 void set_render_target(RendererState* rs, RenderTarget* rt);
 
 void init(RendererState* rs, HWND window_handle)
 {
-    D3D11CreateDevice(
-        nullptr,
-        D3D_DRIVER_TYPE_HARDWARE,
-        nullptr,
-        D3D11_CREATE_DEVICE_SINGLETHREADED,
-        nullptr,
-        0,
-        D3D11_SDK_VERSION,
-        &rs->device,
-        nullptr,
-        &rs->device_context
-    );
-
     DXGI_SWAP_CHAIN_DESC scd = {};
     scd.BufferCount = 1;
     scd.BufferDesc.Width = 800;
@@ -90,16 +89,23 @@ void init(RendererState* rs, HWND window_handle)
     scd.OutputWindow = window_handle;
     scd.SampleDesc.Count = 1;
     scd.Windowed = true;
-    IDXGIFactory* dxgi_factory;
-    CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&dxgi_factory));
 
-    dxgi_factory->CreateSwapChain(
-        rs->device,
+    check_ok(D3D11CreateDeviceAndSwapChain(
+        nullptr,
+        D3D_DRIVER_TYPE_HARDWARE,
+        nullptr,
+        0,
+        0,
+        0,
+        D3D11_SDK_VERSION,
         &scd,
-        &rs->swap_chain
-    );
+        &rs->swap_chain,
+        &rs->device,
+        nullptr,
+        &rs->device_context
+    ));
 
-    D3D11_VIEWPORT viewport = {0};
+    D3D11_VIEWPORT viewport = {};
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
     viewport.Width = 800;

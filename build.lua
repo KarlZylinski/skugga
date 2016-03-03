@@ -31,7 +31,9 @@ local run = arg_contain("run")
 local cmd = ""
 
 if set_env then
-    vs_dir = os.getenv("VS140COMNTOOLS")
+    local env_number = arg_contain("env_number_110") and "110" or arg_contain("env_number_120") and "120" or "140"
+    vs_dir = os.getenv("VS" .. env_number .. "COMNTOOLS")
+    print(env_number)
     cmd = "\"" .. vs_dir .. "..\\..\\VC\\vcvarsall.bat\" amd64"
 end
 
