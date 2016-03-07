@@ -1,10 +1,5 @@
-struct Camera
-{
-    Matrix4x4 projection_matrix;
-    Matrix4x4 view_matrix;
-    Quaternion rotation;
-    Vector3 position;
-};
+#include "camera.h"
+#include <math.h>
 
 namespace camera
 {
@@ -16,12 +11,12 @@ void recalc_view_matrix(Camera* c)
 
 void set_projection_mode(Camera* c)
 {
-    f32 near_plane = 0.01f;
-    f32 far_plane = 1000.0f;
-    f32 fov = 90.0f;
-    f32 aspect = 1.0f;
-    f32 y_scale = 1.0f / tanf((3.14f / 180.0f) * fov / 2);
-    f32 x_scale = y_scale / aspect;
+    float near_plane = 0.01f;
+    float far_plane = 1000.0f;
+    float fov = 90.0f;
+    float aspect = 1.0f;
+    float y_scale = 1.0f / tanf((3.14f / 180.0f) * fov / 2);
+    float x_scale = y_scale / aspect;
     c->projection_matrix = {
         x_scale, 0, 0, 0,
         0, y_scale, 0, 0,

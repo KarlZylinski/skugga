@@ -1,17 +1,6 @@
+#include "file.h"
 #include <stdio.h>
 #include "memory.h"
-
-struct File
-{
-    uint8* data;
-    uint32 size;
-};
-
-struct LoadedFile
-{
-    bool valid;
-    File file;
-};
 
 namespace file
 {
@@ -24,13 +13,13 @@ LoadedFile load(Allocator* alloc, const char* filename)
         return {false};
 
     fseek(file_handle, 0, SEEK_END);
-    uint32 filesize = ftell(file_handle);
+    unsigned filesize = ftell(file_handle);
     fseek(file_handle, 0, SEEK_SET);
 
     if (filesize == 0)
         return {false};
 
-    uint8* data = (uint8*)alloc->alloc(uint32(filesize));
+    unsigned char* data = (unsigned char*)alloc->alloc(unsigned(filesize));
 
     if (data == nullptr)
         return {false};

@@ -1,4 +1,5 @@
 #pragma once
+#include <math.h>
 
 struct Allocator;
 
@@ -7,13 +8,13 @@ struct DynamicArray
 {
     Allocator* allocator;
     T* data;
-    uint32 num;
-    uint32 capacity;
+    unsigned num;
+    unsigned capacity;
 
     void grow()
     {
         T* old_data = data;
-        uint32 new_capacity = max(capacity * 2, num + 5);
+        unsigned new_capacity = max(capacity * 2, num + 5);
         data = (T*)allocator->alloc(new_capacity * sizeof(T));
         memcpy(data, old_data, num * sizeof(T));
         allocator->dealloc(old_data);
@@ -39,7 +40,7 @@ struct DynamicArray
         return p;
     }
 
-    void remove(uint32 i)
+    void remove(unsigned i)
     {
         if (num == 1 || (num > 1 && i == num - 1))
         {
@@ -69,12 +70,12 @@ struct DynamicArray
         return p;
     }
 
-    T& operator[](uint32 i)
+    T& operator[](unsigned i)
     {
         return data[i];
     }
 
-    const T& operator[](uint32 i) const
+    const T& operator[](unsigned i) const
     {
         return data[i];
     }

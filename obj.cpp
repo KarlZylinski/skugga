@@ -1,23 +1,14 @@
-#include "renderer.h"
-#include "dynamic_array.h"
-
-struct Mesh
-{
-    DynamicArray<Vertex> vertices;
-    DynamicArray<uint32> indices;
-};
-
-struct LoadedMesh
-{
-    bool valid;
-    Mesh mesh;
-};
+#include "obj.h"
+#include <stdlib.h>
+#include "mesh.h"
+#include "memory.h"
+#include "file.h"
 
 struct ParserState
 {
-    uint8* data;
-    uint8* head;
-    uint8* end;
+    unsigned char* data;
+    unsigned char* head;
+    unsigned char* end;
 };
 
 namespace obj
@@ -28,15 +19,15 @@ namespace internal
 
 struct ParsedFace
 {
-    uint32 v1;
-    uint32 v2;
-    uint32 v3;
-    uint32 n1;
-    uint32 n2;
-    uint32 n3;
-    uint32 u1;
-    uint32 u2;
-    uint32 u3;
+    unsigned v1;
+    unsigned v2;
+    unsigned v3;
+    unsigned n1;
+    unsigned n2;
+    unsigned n3;
+    unsigned u1;
+    unsigned u2;
+    unsigned u3;
 };
 
 struct ParsedData
@@ -119,12 +110,12 @@ void skip_line(ParserState* ps)
     ++ps->head;
 }
 
-ParsedData parse(Allocator* alloc, uint8* data, uint32 data_size)
+ParsedData parse(Allocator* alloc, unsigned char* data, unsigned data_size)
 {
     ParserState ps = {};
     ps.data = data;
     ps.head = data;
-    ps.end = (uint8*)memory::ptr_add(data, data_size);
+    ps.end = (unsigned char*)memory::ptr_add(data, data_size);
     ParsedData pd = {};
     pd.vertices = {alloc};
     pd.normals = {alloc};
@@ -134,7 +125,7 @@ ParsedData parse(Allocator* alloc, uint8* data, uint32 data_size)
 
     while (ps.head < ps.end)
     {
-        uint8 c = *ps.head;
+        unsigned char c = *ps.head;
         bool first_on_line = ps.head == ps.data || (ps.head > ps.data && (*(ps.head - 1)) == '\n');
 
         if (!first_on_line)
@@ -154,9 +145,9 @@ ParsedData parse(Allocator* alloc, uint8* data, uint32 data_size)
     return pd;
 }
 
-int32 get_existing_vertex(const DynamicArray<Vertex>& vertices, const Vertex& v1)
+int get_existing_vertex(const DynamicArray<Vertex>& vertices, const Vertex& v1)
 {
-    for (uint32 i = 0; i < vertices.num; ++i)
+    for (unsigned i = 0; i < vertices.num; ++i)
     {
         const Vertex& v2 = vertices[i];
 
@@ -174,7 +165,7 @@ int32 get_existing_vertex(const DynamicArray<Vertex>& vertices, const Vertex& v1
 
 void add_vertex_to_mesh(Mesh* m, const Vertex& v)
 {
-    int32 i = get_existing_vertex(m->vertices, v);
+    int i = get_existing_vertex(m->vertices, v);
 
     if (i != -1)
     {
@@ -200,7 +191,7 @@ LoadedMesh load(Allocator* alloc, const char* filename)
     m.vertices = {alloc};
     m.indices = {alloc};
 
-    for (uint32 i = 0; i < pd.faces.num; ++i)
+    for (unsigned i = 0; i < pd.faces.num; ++i)
     {
         const internal::ParsedFace& f = pd.faces[i];
         internal::add_vertex_to_mesh(&m, {pd.vertices[f.v1], pd.normals[f.n1], pd.uvs[f.u1], {1.0f, 1.0f, 1.0f, 1.0f}});

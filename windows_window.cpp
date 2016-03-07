@@ -1,14 +1,8 @@
+#include "windows_window.h"
 #include "key.h"
 
 namespace windows
 {
-
-struct Window
-{
-    HWND handle;
-    WNDCLASSEX window_class;
-    WindowState state;
-};
 
 namespace window
 {

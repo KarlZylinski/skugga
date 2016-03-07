@@ -3,9 +3,12 @@
 #include "object.h"
 #include "types.h"
 #include "helpers.h"
-
-// This must be last of the includes!
-#include "build_include.h"
+#include "memory.h"
+#include "windows_window.h"
+#include "renderer_direct3d.h"
+#include "simulation.h"
+#include "keyboard.h"
+#include "mouse.h"
 
 int main()
 {

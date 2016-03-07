@@ -1,20 +1,10 @@
-enum struct PixelFormat
-{
-    R8G8B8A8_UINT_NORM
-};
+#include "image.h"
 
-struct Image
-{
-    uint8* data;
-    uint32 width;
-    uint32 height;
-    PixelFormat pixel_format;
-};
 
 namespace image
 {
 
-uint32 pixel_size(PixelFormat pf)
+unsigned pixel_size(PixelFormat pf)
 {
     switch (pf)
     {
@@ -25,7 +15,7 @@ uint32 pixel_size(PixelFormat pf)
     }
 }
 
-uint32 calc_size(PixelFormat pf, uint32 size_x, uint32 size_y)
+unsigned calc_size(PixelFormat pf, unsigned size_x, unsigned size_y)
 {
     return size_x * size_y * pixel_size(pf);
 }

@@ -1,43 +1,42 @@
+#include "memory.h"
 #include "types.h"
 
 struct TempMemoryHeader
 {
     bool freed;
     TempMemoryHeader* prev;
-    uint32 size;
+    unsigned size;
 };
 
 struct TempMemoryStorage
 {
-    uint8* start;
-    uint8* head;
-    uint32 capacity;
+    unsigned char* start;
+    unsigned char* head;
+    unsigned capacity;
 };
 
 namespace memory
 {
 
-static const uint32 default_align = 8;
-
 unsigned ptr_diff(void* ptr1, void* ptr2)
 {
-    return (unsigned)((uint8*)ptr2 - (uint8*)ptr1);
+    return (unsigned)((unsigned char*)ptr2 - (unsigned char*)ptr1);
 }
 
-void* ptr_add(void* ptr1, uint32 offset)
+void* ptr_add(void* ptr1, unsigned offset)
 {
-    return (void*)((uint8*)ptr1 + offset);
+    return (void*)((unsigned char*)ptr1 + offset);
 }
 
-void* ptr_sub(void* ptr1, uint32 offset)
+void* ptr_sub(void* ptr1, unsigned offset)
 {
-    return (void*)((uint8*)ptr1 - offset);
+    return (void*)((unsigned char*)ptr1 - offset);
 }
 
-void* align_forward(void* p, uint32 align = default_align)
+void* align_forward(void* p, unsigned align)
 {
     uintptr_t pi = uintptr_t(p);
-    const uint32 mod = pi % align;
+    const unsigned mod = pi % align;
 
     if (mod)
         pi += (align - mod);
@@ -55,12 +54,12 @@ TempMemoryStorage tms;
 void init(void* start, unsigned capacity)
 {
     memzero(&tms, TempMemoryStorage);
-    tms.start = (uint8*)start;
+    tms.start = (unsigned char*)start;
     tms.head = tms.start;
     tms.capacity = capacity;
 }
 
-void* alloc(uint32 size, uint32 align = memory::default_align)
+void* alloc(unsigned size, unsigned align = memory::default_align)
 {
     Assert(memory::ptr_diff(tms.start, tms.head + align + size + sizeof(TempMemoryHeader)) < tms.capacity, "Out of temp memory");
     TempMemoryHeader* tmh = (TempMemoryHeader*)memory::align_forward(tms.head, align);
@@ -100,15 +99,12 @@ void dealloc(void* ptr)
         tmh = tmh->prev;
     }
 
-    tms.head = tmh == nullptr ? tms.start : (uint8*)tmh;
+    tms.head = tmh == nullptr ? tms.start : (unsigned char*)tmh;
 }
 
 }
 
 namespace temp_allocator
-{
-
-namespace internal
 {
 
 void* alloc(Allocator* allocator, unsigned size)
@@ -127,11 +123,11 @@ void dealloc(Allocator* allocator, void* ptr)
     
     temp_memory::dealloc(ptr);
 
-    for (uint32 i = 0; i < allocator->num_allocations; ++i)
+    for (unsigned i = 0; i < allocator->num_allocations; ++i)
     {
         if (allocator->allocations[i] == ptr)
         {
-            uint32 last_index = allocator->num_allocations - 1;
+            unsigned last_index = allocator->num_allocations - 1;
             if (allocator->num_allocations > 1 && i != last_index)
             {
                 allocator->allocations[i] = allocator->allocations[last_index];
@@ -150,7 +146,7 @@ void dealloc(Allocator* allocator, void* ptr)
 
 void dealloc_all(Allocator* allocator)
 {
-    for (uint8 i = 0; i < allocator->num_allocations; ++i)
+    for (unsigned char i = 0; i < allocator->num_allocations; ++i)
     {
         temp_memory::dealloc(allocator->allocations[i]);
     }
@@ -160,8 +156,4 @@ void dealloc_all(Allocator* allocator)
 }
 
 }
-
-}
-
-#define create_temp_allocator() { temp_allocator::internal::alloc, temp_allocator::internal::dealloc, temp_allocator::internal::dealloc_all }
 

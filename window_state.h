@@ -1,3 +1,8 @@
+#pragma once
+
+#include "key.h"
+#include "math.h"
+
 namespace window
 {
 

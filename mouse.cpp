@@ -15,6 +15,11 @@ void init()
     memzero(&mouse_state, Mouse);
 }
 
+void add_delta(const Vector2i& delta)
+{
+    mouse_state.delta += delta;
+}
+
 const Vector2i& delta()
 {
     return mouse_state.delta;

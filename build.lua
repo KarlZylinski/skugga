@@ -1,20 +1,27 @@
 local lfs = require "lfs"
 
-local build_include_files = "#pragma once\n"
+local files_to_build = {}
 
 function string.ends_with(str, e)
    return e == '' or string.sub(str,-string.len(e)) == e
 end
 
-for filename in lfs.dir(".") do
-    if filename ~= "main.cpp" and filename ~= "build_include.h" and filename ~= "memory_test.cpp" and string.ends_with(filename, ".cpp") then
-        build_include_files = build_include_files .. "#include \"" .. filename .. "\"\n"
+function string.replace_end(str, n, new)
+    local str_len = string.len(str)
+    local new_str_end = str_len - n
+
+    if new_str_end < 1 then
+        new_str_end = 1
     end
+
+    return str:sub(1, new_str_end) .. new
 end
 
-file = io.open("build_include.h", "w")
-file:write(build_include_files)
-file:close()
+for filename in lfs.dir(".") do
+    if string.ends_with(filename, ".cpp") and filename ~= "memory_test.cpp" then
+        table.insert(files_to_build, filename)
+    end
+end
 
 function arg_contain(str)
   for _, value in pairs(arg) do
@@ -28,29 +35,45 @@ end
 local set_env = arg_contain("set_env")
 local build = arg_contain("build")
 local run = arg_contain("run")
-local cmd = ""
+
+function run_or_die(cmd)
+    if os.execute(cmd) ~= 0 then
+        os.exit()
+    end
+end
 
 if set_env then
     local env_number = arg_contain("env_number_110") and "110" or arg_contain("env_number_120") and "120" or "140"
-    vs_dir = os.getenv("VS" .. env_number .. "COMNTOOLS")
-    print(env_number)
-    cmd = "\"" .. vs_dir .. "..\\..\\VC\\vcvarsall.bat\" amd64"
+    local vs_dir = os.getenv("VS" .. env_number .. "COMNTOOLS")
+
+    if vs_dir == nil then
+        print("Could not find visual studio.")
+        os.exit()
+    end
+
+    run_or_die("\"" .. vs_dir .. "..\\..\\VC\\vcvarsall.bat\" amd64")
 end
 
 if build then
-    if cmd:len() ~= 0 then
-        cmd = cmd .. " && "
+    lfs.mkdir("build")
+
+    local object_files = ""
+
+    for _, filename in ipairs(files_to_build) do
+        local object_filename = "build\\" .. string.replace_end(filename, 3, "o")
+        local build_cmd = "cl.exe /FI types.h /FI helpers.h /D _HAS_EXCEPTIONS=0 /W4 /Gm /WX /TP /DUNICODE /wd4201 /wd4100 /c /D _CRT_SECURE_NO_WARNINGS /Zi /MTd /D DEBUG /Fo" .. object_filename .. " " .. filename
+        run_or_die(build_cmd)
+        object_files = object_files .. object_filename .. " "
     end
 
-    cmd = cmd .. "cl.exe /D _HAS_EXCEPTIONS=0 /W4 /WX /TP /DUNICODE /wd4201 /wd4100 /D _CRT_SECURE_NO_WARNINGS /Zi /MTd /D DEBUG main.cpp /link /subsystem:windows /entry:mainCRTStartup /incremental:no d3d11.lib user32.lib dxgi.lib D3DCompiler.lib /out:skugga.exe"
+    if #object_files > 0 then
+        local link_cmd = "link.exe /subsystem:windows /entry:mainCRTStartup d3d11.lib user32.lib dxgi.lib D3DCompiler.lib /out:skugga.exe " .. object_files
+        run_or_die(link_cmd)
+    end
 end
 
 if run then
-    if cmd:len() ~= 0 then
-        cmd = cmd .. " && "
-    end
-
-    cmd = cmd .. "skugga.exe"
+    run_or_die("skugga.exe")
 end
 
 os.execute(cmd)

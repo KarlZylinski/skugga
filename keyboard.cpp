@@ -17,19 +17,31 @@ void init()
     memzero(&keyboard_state, Keyboard);
 }
 
-bool held(Key key)
+bool is_held(Key key)
 {
     return keyboard_state.held[(unsigned)key];
 }
 
-bool presssed(Key key)
+bool is_presssed(Key key)
 {
     return keyboard_state.pressed[(unsigned)key];
 }
 
-bool released(Key key)
+bool is_released(Key key)
 {
     return keyboard_state.released[(unsigned)key];
+}
+
+void pressed(Key key)
+{
+    keyboard_state.pressed[(unsigned)key] = true;
+    keyboard_state.held[(unsigned)key] = true;
+}
+
+void released(Key key)
+{
+    keyboard_state.released[(unsigned)key] = true;
+    keyboard_state.held[(unsigned)key] = false;
 }
 
 void end_of_frame()

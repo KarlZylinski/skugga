@@ -1,47 +1,6 @@
-#include <d3d11.h>
+#include "renderer_direct3d.h"
 #include <D3Dcompiler.h>
 #include "world.h"
-
-struct Geometry {
-    ID3D11Buffer* vertices;
-    ID3D11Buffer* indices;
-    uint32 num_indices;
-};
-
-struct ConstantBuffer
-{
-    Matrix4x4 model_view_projection;
-    Matrix4x4 model;
-    Matrix4x4 projection;
-    Vector4 sun_position;
-};
-
-namespace renderer
-{
-    static const unsigned num_resources = 4096;
-}
-
-struct RenderTarget
-{
-    ID3D11Texture2D* texture;
-    PixelFormat pixel_format;
-    ID3D11RenderTargetView* view;
-};
-
-struct RendererState
-{
-    ID3D11Device* device;
-    ID3D11DeviceContext* device_context;
-    ID3D11InputLayout* input_layout;
-    ID3D11VertexShader* vertex_shader;
-    ID3D11PixelShader* pixel_shader;
-    ID3D11Buffer* constant_buffer;
-    ID3D11Texture2D* depth_stencil_texture;
-    ID3D11DepthStencilView* depth_stencil_view;
-    IDXGISwapChain* swap_chain;
-    RenderTarget back_buffer;
-    Geometry geometries[renderer::num_resources];
-};
 
 namespace renderer
 {
@@ -69,7 +28,7 @@ void check_ok(HRESULT res)
         return;
     }
 
-    static wchar msg[120];
+    static wchar_t msg[120];
     wsprintf(msg, L"Error in renderer: %0x", res);
     MessageBox(nullptr, msg, nullptr, 0);
 }
@@ -241,7 +200,7 @@ int find_free_geometry_handle(const RendererState& rs)
     return -1;
 }
 
-unsigned load_geometry(RendererState* rs, Vertex* vertices, unsigned num_vertices, uint32* indices, unsigned num_indices)
+unsigned load_geometry(RendererState* rs, Vertex* vertices, unsigned num_vertices, unsigned* indices, unsigned num_indices)
 {
     unsigned handle = renderer::find_free_geometry_handle(*rs);
 
@@ -264,7 +223,7 @@ unsigned load_geometry(RendererState* rs, Vertex* vertices, unsigned num_vertice
     {
         D3D11_BUFFER_DESC bd = {0};
         bd.Usage = D3D11_USAGE_DYNAMIC;
-        bd.ByteWidth = sizeof(uint32) * num_indices;
+        bd.ByteWidth = sizeof(unsigned) * num_indices;
         bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
         bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         D3D11_SUBRESOURCE_DATA srd = {0};
@@ -346,8 +305,8 @@ Image read_back_texture(Allocator* alloc, RendererState* rs, const RenderTarget&
     rs->device_context->CopyResource(staging_texture, rt.texture);
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
     rs->device_context->Map(staging_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
-    uint32 size = image::calc_size(rt.pixel_format, rtd.Width, rtd.Height);
-    uint8* p = (uint8*)alloc->alloc(size);
+    unsigned size = image::calc_size(rt.pixel_format, rtd.Width, rtd.Height);
+    unsigned char* p = (unsigned char*)alloc->alloc(size);
     memcpy(p, mapped_resource.pData, size);
     rs->device_context->Unmap(staging_texture, 0);
     Image i = {};

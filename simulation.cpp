@@ -1,11 +1,11 @@
-#include "world.h"
+#include "simulation.h"
 #include "window_state.h"
-
-struct SimulationState
-{
-    Camera camera;
-    World world;
-};
+#include "mesh.h"
+#include "renderer_direct3d.h"
+#include "memory.h"
+#include "obj.h"
+#include "keyboard.h"
+#include "mouse.h"
 
 namespace simulation
 {
@@ -52,19 +52,17 @@ void create_world(World* world, RendererState* rs)
 
 void key_pressed_callback(Key key)
 {
-    keyboard_state.pressed[(unsigned)key] = true;
-    keyboard_state.held[(unsigned)key] = true;
+    keyboard::pressed(key);
 }
 
 void key_released_callback(Key key)
 {
-    keyboard_state.released[(unsigned)key] = true;
-    keyboard_state.held[(unsigned)key] = false;
+    keyboard::released(key);
 }
 
 void mouse_moved_callback(const Vector2i& delta)
 {
-    mouse_state.delta += delta;
+    mouse::add_delta(delta);
 }
 
 } // namespace internal
@@ -84,19 +82,19 @@ void simulate(SimulationState* ss)
 {
     Matrix4x4 move = matrix4x4::identity();
 
-    if (keyboard::held(Key::W))
+    if (keyboard::is_held(Key::W))
     {
         move.w.z += 0.0005f;
     }
-    if (keyboard::held(Key::S))
+    if (keyboard::is_held(Key::S))
     {
         move.w.z -= 0.0005f;
     }
-    if (keyboard::held(Key::A))
+    if (keyboard::is_held(Key::A))
     {
         move.w.x -= 0.0005f;
     }
-    if (keyboard::held(Key::D))
+    if (keyboard::is_held(Key::D))
     {
         move.w.x += 0.0005f;
     }
