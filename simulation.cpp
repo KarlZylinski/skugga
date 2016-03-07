@@ -77,7 +77,7 @@ void init(SimulationState* ss, RendererState* rs, WindowState* window_state)
     window_state->key_pressed_callback = internal::key_pressed_callback;
     window_state->mouse_moved_callback = internal::mouse_moved_callback;
     internal::create_world(&ss->world, rs);
-    camera::init(&ss->camera);
+    camera::set_projection_mode(&ss->camera);
 }
 
 void simulate(SimulationState* ss)

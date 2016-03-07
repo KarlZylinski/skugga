@@ -8,14 +8,14 @@ struct Camera
 
 namespace camera
 {
+
 void recalc_view_matrix(Camera* c)
 {
     c->view_matrix = matrix4x4::inverse(matrix4x4::from_rotation_and_translation(c->rotation, c->position));
 }
 
-void init(Camera* c)
+void set_projection_mode(Camera* c)
 {
-    memset(c, 0, sizeof(Camera));
     f32 near_plane = 0.01f;
     f32 far_plane = 1000.0f;
     f32 fov = 90.0f;
@@ -29,14 +29,18 @@ void init(Camera* c)
         0, 0, (-far_plane * near_plane) / (far_plane - near_plane), 0 
     };
     c->rotation = quaternion::identity();
-    c->position.z = -5;
+    recalc_view_matrix(c);
+}
 
-    /*c->projection_matrix = {
+void set_lightmap_rendering_mode(Camera* c)
+{
+    c->projection_matrix = {
         -2, 0, 0, 0,
         0, 2, 0, 0,
         0, 0, 1, 0,
         1, -1, 0, 1 
-    };*/
+    };
+    c->rotation = quaternion::identity();
     recalc_view_matrix(c);
 }
 
