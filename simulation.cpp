@@ -7,13 +7,7 @@
 #include "keyboard.h"
 #include "mouse.h"
 
-namespace simulation
-{
-
-namespace internal
-{
-
-void create_scaled_box(World* world, RendererState* rs, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color)
+static void create_scaled_box(World* world, RendererState* rs, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color)
 {
     Vertex* scaled_vertices = m.vertices.clone_raw();
     memcpy(scaled_vertices, m.vertices.data, m.vertices.num * sizeof(Vertex));
@@ -31,7 +25,7 @@ void create_scaled_box(World* world, RendererState* rs, const Mesh& m, const Vec
     world::add_object(world, floor_obj);
 }
 
-void create_world(World* world, RendererState* rs)
+static void create_world(World* world, RendererState* rs)
 {
     Allocator ta = create_temp_allocator();
     LoadedMesh lm = obj::load(&ta, "box.wobj");
@@ -50,31 +44,32 @@ void create_world(World* world, RendererState* rs)
     create_scaled_box(world, rs, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random());
 }
 
-void key_pressed_callback(Key key)
+static void key_pressed_callback(Key key)
 {
     keyboard::pressed(key);
 }
 
-void key_released_callback(Key key)
+static void key_released_callback(Key key)
 {
     keyboard::released(key);
 }
 
-void mouse_moved_callback(const Vector2i& delta)
+static void mouse_moved_callback(const Vector2i& delta)
 {
     mouse::add_delta(delta);
 }
 
-} // namespace internal
+namespace simulation
+{
 
 void init(SimulationState* ss, RendererState* rs, WindowState* window_state)
 {
     keyboard::init();
     mouse::init();
-    window_state->key_released_callback = internal::key_released_callback;
-    window_state->key_pressed_callback = internal::key_pressed_callback;
-    window_state->mouse_moved_callback = internal::mouse_moved_callback;
-    internal::create_world(&ss->world, rs);
+    window_state->key_released_callback = key_released_callback;
+    window_state->key_pressed_callback = key_pressed_callback;
+    window_state->mouse_moved_callback = mouse_moved_callback;
+    create_world(&ss->world, rs);
     camera::set_projection_mode(&ss->camera);
 }
 

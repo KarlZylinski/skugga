@@ -11,12 +11,6 @@ struct ParserState
     unsigned char* end;
 };
 
-namespace obj
-{
-
-namespace internal
-{
-
 struct ParsedFace
 {
     unsigned v1;
@@ -38,7 +32,7 @@ struct ParsedData
     DynamicArray<ParsedFace> faces;
 };
 
-void skip_to_numeric(ParserState* ps)
+static void skip_to_numeric(ParserState* ps)
 {
     while (ps->head < ps->end && (*ps->head < '0' || *ps->head > '9') && *ps->head != '-')
     {
@@ -46,7 +40,7 @@ void skip_to_numeric(ParserState* ps)
     }
 }
 
-void parse_uv(ParserState* ps, ParsedData* pd)
+static void parse_uv(ParserState* ps, ParsedData* pd)
 {
     Vector2* uv = pd->uvs.push();
     skip_to_numeric(ps);
@@ -55,7 +49,7 @@ void parse_uv(ParserState* ps, ParsedData* pd)
     uv->y = strtof((const char*)ps->head, (char**)&ps->head);
 }
 
-void parse_normal(ParserState* ps, ParsedData* pd)
+static void parse_normal(ParserState* ps, ParsedData* pd)
 {
     Vector3* normal = pd->normals.push();
     skip_to_numeric(ps);
@@ -66,7 +60,7 @@ void parse_normal(ParserState* ps, ParsedData* pd)
     normal->z = strtof((const char*)ps->head, (char**)&ps->head);
 }
 
-void parse_vertex(ParserState* ps, ParsedData* pd)
+static void parse_vertex(ParserState* ps, ParsedData* pd)
 {
     Vector3* vertex = pd->vertices.push();
     skip_to_numeric(ps);
@@ -77,7 +71,7 @@ void parse_vertex(ParserState* ps, ParsedData* pd)
     vertex->z = strtof((const char*)ps->head, (char**)&ps->head);
 }
 
-void parse_face(ParserState* ps, ParsedData* pd)
+static void parse_face(ParserState* ps, ParsedData* pd)
 {
     ParsedFace* face = pd->faces.push();
     skip_to_numeric(ps);
@@ -100,7 +94,7 @@ void parse_face(ParserState* ps, ParsedData* pd)
     face->n3 = strtol((const char*)ps->head, (char**)&ps->head, 10) - 1;
 }
 
-void skip_line(ParserState* ps)
+static void skip_line(ParserState* ps)
 {
     while (ps->head < ps->end && *ps->head != '\n')
     {
@@ -110,7 +104,7 @@ void skip_line(ParserState* ps)
     ++ps->head;
 }
 
-ParsedData parse(Allocator* alloc, unsigned char* data, unsigned data_size)
+static ParsedData parse(Allocator* alloc, unsigned char* data, unsigned data_size)
 {
     ParserState ps = {};
     ps.data = data;
@@ -145,7 +139,7 @@ ParsedData parse(Allocator* alloc, unsigned char* data, unsigned data_size)
     return pd;
 }
 
-int get_existing_vertex(const DynamicArray<Vertex>& vertices, const Vertex& v1)
+static int get_existing_vertex(const DynamicArray<Vertex>& vertices, const Vertex& v1)
 {
     for (unsigned i = 0; i < vertices.num; ++i)
     {
@@ -163,7 +157,7 @@ int get_existing_vertex(const DynamicArray<Vertex>& vertices, const Vertex& v1)
     return -1;
 }
 
-void add_vertex_to_mesh(Mesh* m, const Vertex& v)
+static void add_vertex_to_mesh(Mesh* m, const Vertex& v)
 {
     int i = get_existing_vertex(m->vertices, v);
 
@@ -177,7 +171,8 @@ void add_vertex_to_mesh(Mesh* m, const Vertex& v)
     m->vertices.add(v);
 }
 
-}
+namespace obj
+{
 
 LoadedMesh load(Allocator* alloc, const char* filename)
 {
@@ -186,17 +181,17 @@ LoadedMesh load(Allocator* alloc, const char* filename)
     if (!lf.valid)
         return {false};
 
-    internal::ParsedData pd = internal::parse(alloc, lf.file.data, lf.file.size);
+    ParsedData pd = parse(alloc, lf.file.data, lf.file.size);
     Mesh m = {};
     m.vertices = {alloc};
     m.indices = {alloc};
 
     for (unsigned i = 0; i < pd.faces.num; ++i)
     {
-        const internal::ParsedFace& f = pd.faces[i];
-        internal::add_vertex_to_mesh(&m, {pd.vertices[f.v1], pd.normals[f.n1], pd.uvs[f.u1], {1.0f, 1.0f, 1.0f, 1.0f}});
-        internal::add_vertex_to_mesh(&m, {pd.vertices[f.v2], pd.normals[f.n2], pd.uvs[f.u2], {1.0f, 1.0f, 1.0f, 1.0f}});
-        internal::add_vertex_to_mesh(&m, {pd.vertices[f.v3], pd.normals[f.n3], pd.uvs[f.u3], {1.0f, 1.0f, 1.0f, 1.0f}});
+        const ParsedFace& f = pd.faces[i];
+        add_vertex_to_mesh(&m, {pd.vertices[f.v1], pd.normals[f.n1], pd.uvs[f.u1], {1.0f, 1.0f, 1.0f, 1.0f}});
+        add_vertex_to_mesh(&m, {pd.vertices[f.v2], pd.normals[f.n2], pd.uvs[f.u2], {1.0f, 1.0f, 1.0f, 1.0f}});
+        add_vertex_to_mesh(&m, {pd.vertices[f.v3], pd.normals[f.n3], pd.uvs[f.u3], {1.0f, 1.0f, 1.0f, 1.0f}});
     }
 
     return {true, m};

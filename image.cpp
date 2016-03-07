@@ -1,6 +1,5 @@
 #include "image.h"
 
-
 namespace image
 {
 

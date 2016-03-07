@@ -2,13 +2,7 @@
 #include <D3Dcompiler.h>
 #include "world.h"
 
-namespace renderer
-{
-
-namespace internal
-{
-
-DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
+static DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
 {
     switch(pf)
     {
@@ -19,7 +13,8 @@ DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
     }
 }
 
-} // namespace internal
+namespace renderer
+{
 
 void check_ok(HRESULT res)
 {
@@ -161,7 +156,7 @@ RenderTarget create_render_texture(RendererState* rs, PixelFormat pf)
     rtd.Height = scd.BufferDesc.Height;
     rtd.MipLevels = 1;
     rtd.ArraySize = 1;
-    rtd.Format = internal::pixel_format_to_dxgi_format(pf);
+    rtd.Format = pixel_format_to_dxgi_format(pf);
     rtd.SampleDesc.Count = 1;
     rtd.Usage = D3D11_USAGE_DEFAULT;
     rtd.BindFlags = D3D11_BIND_RENDER_TARGET;

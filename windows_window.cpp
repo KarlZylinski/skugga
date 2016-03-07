@@ -1,16 +1,7 @@
 #include "windows_window.h"
 #include "key.h"
 
-namespace windows
-{
-
-namespace window
-{
-
-namespace internal
-{
-
-Key key_from_windows_key_code(WPARAM key, LPARAM flags)
+static Key key_from_windows_key_code(WPARAM key, LPARAM flags)
 {
     switch (key)
     {
@@ -123,9 +114,9 @@ Key key_from_windows_key_code(WPARAM key, LPARAM flags)
     return Key::Unknown;
 }
 
-LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPARAM lparam)
+static LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPARAM lparam)
 {
-    Window* window = (Window*)GetWindowLongPtr(window_handle, GWLP_USERDATA);
+    windows::Window* window = (windows::Window*)GetWindowLongPtr(window_handle, GWLP_USERDATA);
 
     if (window == nullptr)
         return DefWindowProc(window_handle, message, wparam, lparam);
@@ -174,7 +165,11 @@ LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPARAM lpar
     return DefWindowProc(window_handle, message, wparam, lparam);
 }
 
-} // namespace internal
+namespace windows
+{
+
+namespace window
+{
 
 void init(Window* w)
 {
@@ -182,7 +177,7 @@ void init(Window* w)
     WNDCLASSEX wc = {0};
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = internal::window_proc;
+    wc.lpfnWndProc = window_proc;
     wc.hInstance = instance_handle;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
