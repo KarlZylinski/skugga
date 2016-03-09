@@ -12,6 +12,6 @@ struct LoadedMesh
 namespace obj
 {
 
-LoadedMesh load(Allocator* alloc, const char* filename);
+LoadedMesh load(Allocator* alloc, const wchar* filename);
 
 }

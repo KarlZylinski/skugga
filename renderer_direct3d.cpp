@@ -67,22 +67,6 @@ void init(RendererState* rs, HWND window_handle)
     viewport.MinDepth = 0;
     viewport.MaxDepth = 1;
     rs->device_context->RSSetViewports(1, &viewport);
-    ID3DBlob* vs_blob;
-    ID3DBlob* ps_blob;
-    D3DCompileFromFile(L"shader.shader", 0, 0, "VShader", "vs_4_0", 0, 0, &vs_blob, 0);
-    D3DCompileFromFile(L"shader.shader", 0, 0, "PShader", "ps_4_0", 0, 0, &ps_blob, 0);
-    rs->device->CreateVertexShader(vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), nullptr, &rs->vertex_shader);
-    rs->device->CreatePixelShader(ps_blob->GetBufferPointer(), ps_blob->GetBufferSize(), nullptr, &rs->pixel_shader);
-    rs->device_context->VSSetShader(rs->vertex_shader, 0, 0);
-    rs->device_context->PSSetShader(rs->pixel_shader, 0, 0);
-    D3D11_INPUT_ELEMENT_DESC ied[] = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0}
-    };
-    rs->device->CreateInputLayout(ied, 4, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &rs->input_layout);
-    rs->device_context->IASetInputLayout(rs->input_layout);
     D3D11_BUFFER_DESC cbd = {0};
     cbd.ByteWidth = sizeof(ConstantBuffer);
     cbd.Usage = D3D11_USAGE_DYNAMIC;
@@ -126,11 +110,43 @@ void shutdown(RendererState* rs)
 
     rs->depth_stencil_texture->Release();
     rs->depth_stencil_view->Release();
-    rs->input_layout->Release();
-    rs->vertex_shader->Release();
-    rs->pixel_shader->Release();
     rs->device->Release();
     rs->device_context->Release();
+}
+
+Shader load_shader(RendererState* rs, const wchar* filename)
+{
+    ID3DBlob* vs_blob;
+    ID3DBlob* ps_blob;
+    D3DCompileFromFile(filename, 0, 0, "VShader", "vs_4_0", 0, 0, &vs_blob, 0);
+    D3DCompileFromFile(filename, 0, 0, "PShader", "ps_4_0", 0, 0, &ps_blob, 0);
+    Shader s = {};
+    rs->device->CreateVertexShader(vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), nullptr, &s.vertex_shader);
+    rs->device->CreatePixelShader(ps_blob->GetBufferPointer(), ps_blob->GetBufferSize(), nullptr, &s.pixel_shader);
+    D3D11_INPUT_ELEMENT_DESC ied[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0}
+    };
+    rs->device->CreateInputLayout(ied, 4, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &s.input_layout);
+    vs_blob->Release();
+    ps_blob->Release();
+    return s;
+}
+
+void unload_shader(Shader* s)
+{
+    s->input_layout->Release();
+    s->vertex_shader->Release();
+    s->pixel_shader->Release();
+}
+
+void set_shader(RendererState* rs, Shader* s)
+{
+    rs->device_context->VSSetShader(s->vertex_shader, 0, 0);
+    rs->device_context->PSSetShader(s->pixel_shader, 0, 0);
+    rs->device_context->IASetInputLayout(s->input_layout);
 }
 
 RenderTarget create_back_buffer(RendererState* rs)
@@ -300,7 +316,7 @@ Image read_back_texture(Allocator* alloc, RendererState* rs, const RenderTarget&
     rs->device_context->CopyResource(staging_texture, rt.texture);
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
     rs->device_context->Map(staging_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
-    unsigned size = image::calc_size(rt.pixel_format, rtd.Width, rtd.Height);
+    unsigned size = image::size(rt.pixel_format, rtd.Width, rtd.Height);
     unsigned char* p = (unsigned char*)alloc->alloc(size);
     memcpy(p, mapped_resource.pData, size);
     rs->device_context->Unmap(staging_texture, 0);
@@ -321,7 +337,7 @@ void draw_frame(RendererState* rs, const World& world, const Camera& camera)
     for (unsigned i = 0; i < world.num_objects; ++i)
     {
         if (world.objects[i].valid)
-            renderer::draw(rs, world.objects[i].geometry_handle, world.objects[i].world_transform, camera.view_matrix, camera.projection_matrix);
+            renderer::draw(rs, world.objects[i].geometry_handle, world.objects[i].world_transform, camera::calc_view_matrix(camera), camera.projection_matrix);
     }
 
     renderer::present(rs);

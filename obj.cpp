@@ -174,7 +174,7 @@ static void add_vertex_to_mesh(Mesh* m, const Vertex& v)
 namespace obj
 {
 
-LoadedMesh load(Allocator* alloc, const char* filename)
+LoadedMesh load(Allocator* alloc, const wchar* filename)
 {
     LoadedFile lf = file::load(alloc, filename);
 

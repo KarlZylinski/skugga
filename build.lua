@@ -67,7 +67,7 @@ if build then
     end
 
     if #object_files > 0 then
-        local link_cmd = "link.exe /subsystem:windows /entry:mainCRTStartup d3d11.lib user32.lib dxgi.lib D3DCompiler.lib /out:skugga.exe " .. object_files
+        local link_cmd = "link.exe /debug /subsystem:windows /entry:mainCRTStartup d3d11.lib user32.lib dxgi.lib D3DCompiler.lib /out:skugga.exe " .. object_files
         run_or_die(link_cmd)
     end
 end
@@ -75,5 +75,3 @@ end
 if run then
     run_or_die("skugga.exe")
 end
-
-os.execute(cmd)

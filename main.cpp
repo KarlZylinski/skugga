@@ -21,8 +21,14 @@ int main()
     SimulationState simulation_state = {};
     renderer::init(&renderer_state, window.handle);
     simulation::init(&simulation_state, &renderer_state, &window.state);
+    Shader shader = renderer::load_shader(&renderer_state, L"uv_data.shader");
+    renderer::set_shader(&renderer_state, &shader);
+    /*RenderTarget render_texture = renderer::create_render_texture(&renderer_state, PixelFormat::R8G8B8A8_UINT_NORM);
+    renderer::set_render_target(&renderer_state, &render_texture);*/
+    camera::set_lightmap_rendering_mode(&simulation_state.camera);
 
-    //RenderTarget render_texture = create_render_texture(rs, PixelFormat::R8G8B8A8_UINT_NORM);
+
+
     while(!window.state.closed)
     {
         windows::window::process_all_messsages();

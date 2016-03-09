@@ -17,6 +17,6 @@ namespace image
 {
 
 unsigned pixel_size(PixelFormat pf);
-unsigned calc_size(PixelFormat pf, unsigned size_x, unsigned size_y);
+unsigned size(PixelFormat pf, unsigned size_x, unsigned size_y);
 
 } // namespace image

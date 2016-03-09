@@ -37,15 +37,19 @@ struct RendererState
 {
     ID3D11Device* device;
     ID3D11DeviceContext* device_context;
-    ID3D11InputLayout* input_layout;
-    ID3D11VertexShader* vertex_shader;
-    ID3D11PixelShader* pixel_shader;
     ID3D11Buffer* constant_buffer;
     ID3D11Texture2D* depth_stencil_texture;
     ID3D11DepthStencilView* depth_stencil_view;
     IDXGISwapChain* swap_chain;
     RenderTarget back_buffer;
     Geometry geometries[renderer::num_resources];
+};
+
+struct Shader
+{
+    ID3D11VertexShader* vertex_shader;
+    ID3D11PixelShader* pixel_shader;
+    ID3D11InputLayout* input_layout;
 };
 
 namespace renderer
@@ -57,6 +61,9 @@ RenderTarget create_back_buffer(RendererState* rs);
 void set_render_target(RendererState* rs, RenderTarget* rt);
 void init(RendererState* rs, HWND window_handle);
 void shutdown(RendererState* rs);
+Shader load_shader(RendererState* rs, const wchar* filename);
+void unload_shader(Shader* s);
+void set_shader(RendererState* rs, Shader* s);
 RenderTarget create_back_buffer(RendererState* rs);
 RenderTarget create_render_texture(RendererState* rs, PixelFormat pf);
 void set_constant_buffers(RendererState* rs, const ConstantBuffer& data);

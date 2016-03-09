@@ -28,7 +28,7 @@ static void create_scaled_box(World* world, RendererState* rs, const Mesh& m, co
 static void create_world(World* world, RendererState* rs)
 {
     Allocator ta = create_temp_allocator();
-    LoadedMesh lm = obj::load(&ta, "box.wobj");
+    LoadedMesh lm = obj::load(&ta, L"box.wobj");
 
     if (!lm.valid)
         return;
@@ -102,10 +102,10 @@ void simulate(SimulationState* ss)
         rotation = quaternion::rotate_x(rotation, mouse::delta().y * 0.001f);
     }
 
-    camera::set_rotation(&ss->camera, rotation);
+    ss->camera.rotation = rotation;
     Matrix4x4 camera_test_mat = matrix4x4::from_rotation_and_translation(ss->camera.rotation, {0,0,0});
     Matrix4x4 movement_rotated = move * camera_test_mat;
-    camera::move(&ss->camera, (*(Vector3*)&movement_rotated.w.x));
+    ss->camera.position += *(Vector3*)&movement_rotated.w.x;
 }
 
 }

@@ -11,11 +11,11 @@ int main()
     
     {
         unsigned s = 128;
-        uint8* p1 = (uint8*)temp_memory::alloc(s);
+        unsigned char* p1 = (unsigned char*)temp_memory::alloc(s);
         memset(p1, 0xda, s);
-        uint8* p2 = (uint8*)temp_memory::alloc(s);
+        unsigned char* p2 = (unsigned char*)temp_memory::alloc(s);
         memset(p2, 0xfe, s);
-        uint8* p3 = (uint8*)temp_memory::alloc(s);
+        unsigned char* p3 = (unsigned char*)temp_memory::alloc(s);
         memset(p3, 0x3e, s);
         temp_memory::dealloc(p2);
         for (unsigned i = 0; i < s; ++i)
@@ -30,11 +30,11 @@ int main()
     {
         Allocator ta = create_temp_allocator();
         unsigned s = 128;
-        uint8* p1 = (uint8*)ta.alloc(s);
+        unsigned char* p1 = (unsigned char*)ta.alloc(s);
         memset(p1, 0xaa, s);
-        uint8* p2 = (uint8*)ta.alloc(s);
+        unsigned char* p2 = (unsigned char*)ta.alloc(s);
         memset(p2, 0xbb, s);
-        uint8* p3 = (uint8*)ta.alloc(s);
+        unsigned char* p3 = (unsigned char*)ta.alloc(s);
         memset(p3, 0xcc, s);
     }
     
