@@ -49,7 +49,7 @@ void* align_forward(void* p, unsigned align)
 namespace temp_memory
 {
 
-TempMemoryStorage tms;
+static TempMemoryStorage tms;
 
 void init(void* start, unsigned capacity)
 {
@@ -59,7 +59,7 @@ void init(void* start, unsigned capacity)
     tms.capacity = capacity;
 }
 
-void* alloc(unsigned size, unsigned align = memory::default_align)
+void* alloc(unsigned size, unsigned align)
 {
     Assert(memory::ptr_diff(tms.start, tms.head + align + size + sizeof(TempMemoryHeader)) < tms.capacity, "Out of temp memory");
     TempMemoryHeader* tmh = (TempMemoryHeader*)memory::align_forward(tms.head, align);

@@ -9,8 +9,10 @@ unsigned pixel_size(PixelFormat pf)
     {
         case PixelFormat::R8G8B8A8_UINT_NORM:
             return 4;
+        case PixelFormat::R32G32B32A32_FLOAT:
+            return 16;
         default:
-            return 0;
+            Error("Unknown pixel format."); return 0;
     }
 }
 

@@ -43,6 +43,8 @@ namespace temp_memory
 {
 
 void init(void* start, unsigned capacity);
+void* alloc(unsigned size, unsigned align = memory::default_align);
+void dealloc(void* ptr);
 const unsigned TempMemorySize = 1024 * 1024 * 1024;
 
 }

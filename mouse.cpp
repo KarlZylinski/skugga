@@ -5,7 +5,7 @@ struct Mouse
     Vector2i delta;
 };
 
-Mouse mouse_state;
+static Mouse mouse_state;
 
 namespace mouse
 {

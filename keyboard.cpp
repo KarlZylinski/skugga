@@ -7,7 +7,7 @@ struct Keyboard
     bool released[Key::NumKeys];
 };
 
-Keyboard keyboard_state;
+static Keyboard keyboard_state;
 
 namespace keyboard
 {
@@ -46,8 +46,8 @@ void released(Key key)
 
 void end_of_frame()
 {
-    memset(keyboard_state.pressed, 0, sizeof(Key) * (unsigned)Key::NumKeys);
-    memset(keyboard_state.released, 0, sizeof(Key) * (unsigned)Key::NumKeys);
+    memset(keyboard_state.pressed, 0, sizeof(bool) * (unsigned)Key::NumKeys);
+    memset(keyboard_state.released, 0, sizeof(bool) * (unsigned)Key::NumKeys);
 }
 
 }
