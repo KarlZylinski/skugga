@@ -19,29 +19,29 @@ int main()
     
     windows::Window window = {};
     windows::window::init(&window);
-    RendererState renderer_state = {};
-    SimulationState simulation_state = {};
-    renderer::init(&renderer_state, window.handle);
-    simulation::init(&simulation_state, &renderer_state, &window.state);
-    Shader lightmapping_shader = renderer::load_shader(&renderer_state, L"uv_data.shader");
-    renderer::set_shader(&renderer_state, &lightmapping_shader);
-    RenderTarget render_texture = renderer::create_render_texture(&renderer_state, PixelFormat::R32G32B32A32_FLOAT);
-    renderer::set_render_target(&renderer_state, &render_texture);
-    camera::set_lightmap_rendering_mode(&simulation_state.camera);
+    Renderer renderer = {};
+    renderer.init(window.handle);
+    Simulation simulation = {};
+    simulation.init(&renderer, &window.state);
+    Shader lightmapping_shader = renderer.load_shader(L"uv_data.shader");
+    renderer.set_shader(&lightmapping_shader);
+    RenderTarget render_texture = renderer.create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
+    renderer.set_render_target(&render_texture);
+    camera::set_lightmap_rendering_mode(&simulation.camera);
 
     //while(!window.state.closed)
     //{
         windows::window::process_all_messsages();
-        simulation::simulate(&simulation_state);
-        renderer::draw_frame(&renderer_state, simulation_state.world, simulation_state.camera);
+        simulation.simulate();
+        renderer.draw_frame(simulation.world, simulation.camera);
         keyboard::end_of_frame();
         mouse::end_of_frame();
     //}
 
     Allocator ta = create_temp_allocator();
-    Image i = renderer::read_back_texture(&ta, &renderer_state, render_texture);
-    unsigned image_size = image::size(i.pixel_format, i.width, i.height);
-    Vector4* positions = (Vector4*)i.data;
+    Image img = renderer.read_back_texture(&ta, render_texture);
+    unsigned image_size = image::size(img.pixel_format, img.width, img.height);
+    Vector4* positions = (Vector4*)img.data;
 
     int lax = 0;
     for (unsigned i = 0; i < image_size/16; i += 16)
@@ -53,27 +53,27 @@ int main()
             if (lax == 40)
             {
                 const Vector4& p = positions[i];
-                simulation_state.camera.position = Vector3 {p.x, p.y, p.z};
+                simulation.camera.position = Vector3 {p.x, p.y, p.z};
                 break;
             }
         }
     }
     
-    renderer::set_render_target(&renderer_state, &renderer_state.back_buffer);
-    Shader default_shader = renderer::load_shader(&renderer_state, L"shader.shader");
-    renderer::set_shader(&renderer_state, &default_shader);
-    camera::set_projection_mode(&simulation_state.camera);
-    //simulation_state.camera.position = Vector3 { camera_pos.x, camera_pos.y, camera_pos.z };
+    renderer.set_render_target(&renderer.back_buffer);
+    Shader default_shader = renderer.load_shader(L"shader.shader");
+    renderer.set_shader(&default_shader);
+    camera::set_projection_mode(&simulation.camera);
+    //simulation.camera.position = Vector3 { camera_pos.x, camera_pos.y, camera_pos.z };
 
     while(!window.state.closed)
     {
         windows::window::process_all_messsages();
-        simulation::simulate(&simulation_state);
-        renderer::draw_frame(&renderer_state, simulation_state.world, simulation_state.camera);
+        simulation.simulate();
+        renderer.draw_frame(simulation.world, simulation.camera);
         keyboard::end_of_frame();
         mouse::end_of_frame();
     }
 
-    renderer::shutdown(&renderer_state);
+    renderer.shutdown();
     return 0;
 }

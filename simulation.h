@@ -1,19 +1,13 @@
 #include "world.h"
 #include "camera.h"
 
-struct SimulationState
+struct Renderer;
+struct WindowState;
+
+struct Simulation
 {
+    void init(Renderer* renderer, WindowState* window_state);
+    void simulate();
     Camera camera;
     World world;
 };
-
-struct RendererState;
-struct WindowState;
-
-namespace simulation
-{
-
-void init(SimulationState* ss, RendererState* rs, WindowState* window_state);
-void simulate(SimulationState* ss);
-
-}
