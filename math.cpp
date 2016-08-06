@@ -239,6 +239,26 @@ bool almost_equal(const Vector3& v1, const Vector3& v2)
     return ::almost_equal(v1.x, v2.x) && ::almost_equal(v1.y, v2.y) && ::almost_equal(v1.z, v2.z);
 }
 
+Vector3 cross(const Vector3& v1, const Vector3& v2)
+{
+    return 
+    {
+        v1.y * v2.z - v1.z * v2.y,
+        v1.z * v2.x - v1.x * v2.z,
+        v1.x * v2.y - v1.y * v2.x
+    };
+}
+
+float length(const Vector3& v)
+{
+    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+float dot(const Vector3& v1, const Vector3& v2)
+{
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
 } // namespace vector3
 
 namespace vector4
@@ -299,6 +319,18 @@ Quaternion rotate_z(const Quaternion& q, float rads)
 Quaternion identity()
 {
     return {0, 0, 0, 1};
+}
+
+Quaternion normalize(const Quaternion& q)
+{
+    float len = sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+    return
+    {
+        q.x / len,
+        q.y / len,
+        q.z / len,
+        q.w / len
+    };
 }
 
 } // namespace quaternion

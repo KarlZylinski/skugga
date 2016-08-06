@@ -15,6 +15,12 @@ struct VOut
     float4 color : COLOR;
 };
 
+struct POut
+{
+    float4 position : SV_TARGET0;
+    float4 normal : SV_TARGET1;
+};
+
 VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR)
 {
     VOut output;
@@ -28,8 +34,10 @@ VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEX
     return output;
 }
 
-
-float4 PShader(float4 position : SV_POSITION, float4 vertex_pos : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR) : SV_TARGET
+POut PShader(float4 position : SV_POSITION, float4 vertex_pos : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR)
 {
-    return mul(model, vertex_pos);
+    POut output;
+    output.position = mul(model, vertex_pos);
+    output.normal = mul(model, normal);
+    return output;
 }

@@ -268,6 +268,16 @@ void Renderer::set_render_target(RenderTarget* rt)
     device_context->OMSetRenderTargets(1, &rt->view, depth_stencil_view);
 }
 
+void Renderer::set_render_targets(RenderTarget** rts, unsigned num)
+{
+    ID3D11RenderTargetView* targets[5];
+    for (unsigned i = 0; i < num; ++i)
+    {
+        targets[i] = rts[i]->view;
+    }
+    device_context->OMSetRenderTargets(num, targets, depth_stencil_view);
+}
+
 void Renderer::draw(unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)
 {
     auto geometry = geometries[geometry_handle];

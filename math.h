@@ -69,6 +69,9 @@ namespace vector3
 {
 
 bool almost_equal(const Vector3& v1, const Vector3& v2);
+Vector3 cross(const Vector3& v1, const Vector3& v2);
+float length(const Vector3& v);
+float dot(const Vector3& v1, const Vector3& v2);
 
 } // namespace vector3
 
@@ -86,5 +89,6 @@ Quaternion rotate_x(const Quaternion& q, float rads);
 Quaternion rotate_y(const Quaternion& q, float rads);
 Quaternion rotate_z(const Quaternion& q, float rads);
 Quaternion identity();
+Quaternion normalize(const Quaternion& q);
 
-} // namespace quaternion
+} // namespace quaternionQuaternion normalize(const Quaternion& q)

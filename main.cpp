@@ -25,8 +25,10 @@ int main()
     simulation.init(&renderer, &window.state);
     Shader lightmapping_shader = renderer.load_shader(L"uv_data.shader");
     renderer.set_shader(&lightmapping_shader);
-    RenderTarget render_texture = renderer.create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
-    renderer.set_render_target(&render_texture);
+    RenderTarget vertex_texture = renderer.create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
+    RenderTarget normals_texture = renderer.create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
+    RenderTarget* rts[] = {&vertex_texture, &normals_texture};
+    renderer.set_render_targets(rts, 2);
     camera::set_lightmap_rendering_mode(&simulation.camera);
 
     //while(!window.state.closed)
@@ -39,9 +41,12 @@ int main()
     //}
 
     Allocator ta = create_temp_allocator();
-    Image img = renderer.read_back_texture(&ta, render_texture);
-    unsigned image_size = image::size(img.pixel_format, img.width, img.height);
-    Vector4* positions = (Vector4*)img.data;
+    Image vertex_image = renderer.read_back_texture(&ta, vertex_texture);
+    unsigned image_size = image::size(vertex_image.pixel_format, vertex_image.width, vertex_image.height);
+    Vector4* positions = (Vector4*)vertex_image.data;
+
+    Image normals_image = renderer.read_back_texture(&ta, normals_texture);
+    Vector4* normals = (Vector4*)normals_image.data;
 
     int lax = 0;
     for (unsigned i = 0; i < image_size/16; i += 16)
@@ -53,7 +58,14 @@ int main()
             if (lax == 40)
             {
                 const Vector4& p = positions[i];
+                const Vector3& n = *(Vector3*)&normals[i];
+                camera::set_projection_mode(&simulation.camera);
                 simulation.camera.position = Vector3 {p.x, p.y, p.z};
+                Vector3 forward = {0, 0, 1};
+                Vector3 angle = vector3::cross(forward, n);
+                float forward_len = vector3::length(forward);
+                float w = sqrtf(forward_len * forward_len) + vector3::dot(forward, n);
+                simulation.camera.rotation = quaternion::normalize({ angle.x, angle.y, angle.z, w });
                 break;
             }
         }
@@ -62,7 +74,6 @@ int main()
     renderer.set_render_target(&renderer.back_buffer);
     Shader default_shader = renderer.load_shader(L"shader.shader");
     renderer.set_shader(&default_shader);
-    camera::set_projection_mode(&simulation.camera);
     //simulation.camera.position = Vector3 { camera_pos.x, camera_pos.y, camera_pos.z };
 
     while(!window.state.closed)
