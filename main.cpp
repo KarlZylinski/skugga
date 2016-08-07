@@ -26,6 +26,7 @@ int main()
 
     lightmapper::map(simulation.world, &renderer);
 
+    renderer.disable_scissor();
     renderer.set_render_target(&renderer.back_buffer);
     Shader default_shader = renderer.load_shader(L"shader.shader");
     renderer.set_shader(&default_shader);

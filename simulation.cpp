@@ -7,7 +7,7 @@
 #include "keyboard.h"
 #include "mouse.h"
 
-static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color)
+static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color, unsigned id)
 {
     Vertex* scaled_vertices = m.vertices.clone_raw();
     memcpy(scaled_vertices, m.vertices.data, m.vertices.num * sizeof(Vertex));
@@ -21,7 +21,19 @@ static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3
     Object obj = {0};
     obj.geometry_handle = box_geometry_handle;
     obj.world_transform = matrix4x4::identity();
+    obj.id = id;
     memcpy(&obj.world_transform.w.x, &pos.x, sizeof(Vector3));
+
+    static wchar lightmap_filename[256];
+    wsprintf(lightmap_filename, L"%d.data", id);
+    LoadedTexture lt = renderer->load_texture(lightmap_filename);
+
+    if (lt.valid)
+    {
+        obj.lightmap = lt.texture.resource;
+        obj.lightmap_resource_view = lt.texture.view;
+    }
+
     return obj;
 }
 
@@ -42,7 +54,7 @@ static void create_world(World* world, Renderer* renderer)
     /*world::add_object(world, create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random()));
     world::add_object(world, create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random()));
     world::add_object(world, create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random()));*/
-    world::add_object(world, create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random()));
+    world::add_object(world, create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random(), 145));
 
     //world::add_object(world, create_scaled_box(renderer, lm.mesh, {1, 1, 1}, {-10, 0, 0}, color::random()));
 }
@@ -79,7 +91,7 @@ void Simulation::init(Renderer* renderer, WindowState* window_state)
 
         if (lm.valid)
         {
-            create_light(renderer, &lm.mesh, {2, 20, 4});
+            create_light(renderer, &lm.mesh, {2, 20, -29});
         }
     }
 
@@ -128,5 +140,5 @@ void Simulation::create_light(Renderer* renderer, Mesh* mesh, const Vector3& pos
         mesh->vertices[i].light_emittance = 1.0f;
     }
 
-    world::add_light(&world, create_scaled_box(renderer, *mesh, {10, 10, 10}, position, {1,1,1,1}));
+    world::add_light(&world, create_scaled_box(renderer, *mesh, {10, 10, 10}, position, {1,1,1,1}, 10000));
 }

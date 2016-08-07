@@ -108,7 +108,7 @@ void map(const World& world, Renderer* renderer)
         renderer->set_render_targets(vertex_data_rts, 2);
         renderer->set_shader(&vertex_data_shader);
         renderer->pre_draw_frame();
-        renderer->draw(world.objects[i].geometry_handle, world.objects[i].world_transform, view_matrix, vertex_data_camera.projection_matrix, lights, num_lights);
+        renderer->draw(world.objects[i], view_matrix, vertex_data_camera.projection_matrix, lights, num_lights);
         renderer->present();
 
         renderer->read_back_texture(&vertex_image, vertex_texture);
@@ -175,7 +175,7 @@ void map(const World& world, Renderer* renderer)
         lightmap_file.data = lightmap.data;
         lightmap_file.size = lightmap_size;
         wchar filename[10];
-        wsprintf(filename, L"%d.data", i);
+        wsprintf(filename, L"%d.data", world.objects[i].id);
         file::write(lightmap_file, filename);
     }
 }

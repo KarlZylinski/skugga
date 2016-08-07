@@ -3,6 +3,7 @@
 #include "world.h"
 #include "config.h"
 #include "rect.h"
+#include "file.h"
 
 namespace
 {
@@ -306,18 +307,23 @@ void Renderer::set_render_targets(RenderTarget** rts, unsigned num)
     memcpy(render_targets, rts, sizeof(RenderTarget**) * num);
 }
 
-void Renderer::draw(unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix, const Object** lights, unsigned num_lights)
+void Renderer::draw(const Object& object, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix, const Object** lights, unsigned num_lights)
 {
-    auto geometry = geometries[geometry_handle];
+    auto geometry = geometries[object.geometry_handle];
     ConstantBuffer constant_buffer_data = {};
-    constant_buffer_data.model_view_projection = world_transform_matrix * view_matrix * projection_matrix;
-    constant_buffer_data.model = world_transform_matrix;
+    constant_buffer_data.model_view_projection = object.world_transform * view_matrix * projection_matrix;
+    constant_buffer_data.model = object.world_transform;
     constant_buffer_data.projection = projection_matrix;
     const Object& light = *lights[0];
     constant_buffer_data.sun_position = {light.world_transform.w.x, light.world_transform.w.y, light.world_transform.w.z, 1};
     set_constant_buffers(constant_buffer_data);
     device_context->VSSetConstantBuffers(0, 1, &constant_buffer);
     device_context->PSSetConstantBuffers(0, 1, &constant_buffer);
+
+    if (object.lightmap_resource_view != nullptr)
+    {
+        device_context->PSSetShaderResources(0, 1, &object.lightmap_resource_view);
+    }
     unsigned stride = sizeof(Vertex);
     unsigned offset = 0;
     device_context->IASetVertexBuffers(0, 1, &geometry.vertices, &stride, &offset);
@@ -408,14 +414,14 @@ void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights d
     for (unsigned i = 0; i < world.num_objects; ++i)
     {
         if (world.objects[i].valid)
-            draw(world.objects[i].geometry_handle, world.objects[i].world_transform, view_matrix, camera.projection_matrix, lights, num_lights);
+            draw(world.objects[i], view_matrix, camera.projection_matrix, lights, num_lights);
     }
 
     if (draw_lights == DrawLights::DrawLights)
     {
         for (unsigned i = 0; i < num_lights; ++i)
         {
-            draw(lights[i]->geometry_handle, lights[i]->world_transform, view_matrix, camera.projection_matrix, lights, num_lights);
+            draw(world.lights[i], view_matrix, camera.projection_matrix, lights, num_lights);
         }
     }
 
@@ -440,4 +446,44 @@ void Renderer::disable_scissor()
     rect.left = 0;
     rect.right = WindowWidth;
     device_context->RSSetScissorRects(1, &rect);
+}
+
+LoadedTexture Renderer::load_texture(wchar* filename)
+{
+    Allocator ta = create_temp_allocator();
+    LoadedFile loaded_texture = file::load(&ta, filename);
+
+    if (!loaded_texture.valid)
+        return {false};
+
+    File texture_file = loaded_texture.file;
+
+    D3D11_TEXTURE2D_DESC desc;
+    desc.Width = 200;
+    desc.Height = 200;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.SampleDesc.Quality = 0;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+    desc.MiscFlags = 0;
+
+    D3D11_SUBRESOURCE_DATA init_data;
+    init_data.pSysMem = texture_file.data;
+    init_data.SysMemPitch = 200 * image::pixel_size(PixelFormat::R8G8B8A8_UINT_NORM);
+    init_data.SysMemSlicePitch = texture_file.size;
+
+    ID3D11Texture2D* tex;
+    if (device->CreateTexture2D(&desc, &init_data, &tex) != S_OK)
+        return {false};
+
+    ID3D11ShaderResourceView* resource_view;
+
+    if (device->CreateShaderResourceView(tex, nullptr, &resource_view) != S_OK)
+        return {false};
+
+    return {true, tex, resource_view};
 }
