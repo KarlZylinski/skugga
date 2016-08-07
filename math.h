@@ -32,6 +32,8 @@ struct Quaternion
     float x, y, z, w;
 };
 
+static const float PI = 3.1415926535897932f;
+
 Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2);
 void operator+=(Vector2& v1, const Vector2& v2);
 Vector2 operator+(const Vector2& v1, const Vector2& v2);
@@ -40,6 +42,7 @@ Vector2i operator+(const Vector2i& v1, const Vector2i& v2);
 void operator+=(Vector3& v1, const Vector3& v2);
 Vector3 operator-(const Vector3& v);
 Vector3 operator+(const Vector3& v1, const Vector3& v2);
+Vector3 operator-(const Vector3& v1, const Vector3& v2);
 Vector3 operator*(const Vector3& v, float s);
 Vector3 operator*(const Vector3& v1, const Vector3& v2);
 void operator+=(Vector4& v1, const Vector4& v2);
@@ -95,8 +98,9 @@ namespace quaternion
 Quaternion rotate_x(const Quaternion& q, float rads);
 Quaternion rotate_y(const Quaternion& q, float rads);
 Quaternion rotate_z(const Quaternion& q, float rads);
+Quaternion from_axis_angle(const Vector3& axis, float angle);
 Quaternion identity();
 Quaternion normalize(const Quaternion& q);
-Quaternion from_normal(const Vector3& n);
+Quaternion look_at(const Vector3& source, const Vector3& dest);
 
 } // namespace quaternionQuaternion normalize(const Quaternion& q)

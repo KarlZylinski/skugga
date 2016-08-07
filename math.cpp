@@ -66,6 +66,11 @@ Vector3 operator+(const Vector3& v1, const Vector3& v2)
     return {v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
 }
 
+Vector3 operator-(const Vector3& v1, const Vector3& v2)
+{
+    return {v1.x - v2.x, v1.y - v2.y, v1.z - v2.z};
+}
+
 Vector3 operator*(const Vector3& v, float s)
 {
     return {v.x * s, v.y * s, v.z * s};
@@ -359,6 +364,19 @@ Quaternion rotate_z(const Quaternion& q, float rads)
     };
 }
 
+Quaternion from_axis_angle(const Vector3& axis, float angle)
+{
+    float half_angle = angle * 0.5f;
+    float s = sin(half_angle);
+    return
+    {
+        axis.x * s,
+        axis.y * s,
+        axis.z * s,
+        cos(half_angle)
+    };
+}
+
 Quaternion identity()
 {
     return {0, 0, 0, 1};
@@ -376,13 +394,27 @@ Quaternion normalize(const Quaternion& q)
     };
 }
 
-Quaternion from_normal(const Vector3& n)
+Quaternion look_at(const Vector3& source, const Vector3& dest)
 {
-    static const Vector3 forward = {0, 0, 1};
-    const Vector3 angle = vector3::cross(forward, n);
-    float forward_len = vector3::length(forward);
-    float w = sqrtf(forward_len * forward_len) + vector3::dot(forward, n);
-    return normalize({angle.x, angle.y, angle.z, w});
+    Vector3 source_to_dest = vector3::normalize(dest - source);
+    static Vector3 forward = {0, 0, 1};
+    float dot = vector3::dot(forward, source_to_dest);
+
+    if (fabs(dot - (-1.0f)) < 0.00001f)
+    {
+        return {0, 1, 0, PI};
+    }
+
+    if (fabs(dot - 1.0f) < 0.000001f)
+    {
+        return identity();
+    }
+
+    float rot_angle = acos(dot);
+    Vector3 rot_axis = vector3::normalize(vector3::cross(forward, source_to_dest));
+    return from_axis_angle(rot_axis, rot_angle);
 }
+
+
 
 } // namespace quaternion

@@ -4,6 +4,7 @@
 #include "windows_window.h"
 #include "rect.h"
 #include "config.h"
+#include "keyboard.h"
 
 namespace lightmapper
 {
@@ -126,44 +127,53 @@ void map(const World& world, Renderer* renderer)
 
             Patch& p = patches[num_patches];
             ++num_patches;
-            const Vector4& pos = positions[pixel_index];
+            const Vector3& pos = *(Vector3*)&positions[pixel_index];
 
             Camera base_cam = {};
             camera::set_projection_mode(&base_cam);
             base_cam.position = {pos.x, pos.y, pos.z};
 
             p.front = base_cam;
-            p.front.rotation = quaternion::from_normal(n);
+            static Vector3 origin = {0,0,0};
+            p.front.rotation = quaternion::look_at(origin, n);
+            Vector3 bitangent = vector3::bitangent(n);
+            Vector3 tangent = vector3::tangent(n);
 
             p.right = base_cam;
-            p.right.rotation = quaternion::from_normal(vector3::bitangent(n));
+            p.right.rotation = quaternion::look_at(origin, bitangent);
 
             p.left = base_cam;
-            p.left.rotation = quaternion::from_normal(-vector3::bitangent(n));
+            p.left.rotation = quaternion::look_at(origin, -bitangent);
 
             p.up = base_cam;
-            p.up.rotation = quaternion::from_normal(vector3::tangent(n));
+            p.up.rotation = quaternion::look_at(origin, tangent);
 
             p.down = base_cam;
-            p.down.rotation = quaternion::from_normal(-vector3::tangent(n));
+            p.down.rotation = quaternion::look_at(origin, -tangent);
 
             p.pixel_index = pixel_index;
         }
 
         memset(lightmap.data, 0, lightmap_size);
         renderer->set_shader(&light_contribution_shader);
-        renderer->set_render_target(&light_contrib_texture);
+        renderer->set_render_target(&renderer->back_buffer);
 
         for (unsigned patch_index = 0; patch_index < num_patches; ++patch_index)
         {
             const Patch& p = patches[patch_index];
             windows::window::process_all_messsages();
+
+            if (keyboard::is_presssed(Key::Escape))
+            {
+                return;
+            }
+
             Color c = {};
-            c += draw_hemicube_side(renderer, world, scissor_full, p.front, light_contrib_texture, &light_contrib_image);
-            c += draw_hemicube_side(renderer, world, scissor_left, p.right, light_contrib_texture, &light_contrib_image);
-            c += draw_hemicube_side(renderer, world, scissor_right, p.left, light_contrib_texture, &light_contrib_image);
-            c += draw_hemicube_side(renderer, world, scissor_bottom, p.up, light_contrib_texture, &light_contrib_image);
-            c += draw_hemicube_side(renderer, world, scissor_top, p.down, light_contrib_texture, &light_contrib_image);
+            //c += draw_hemicube_side(renderer, world, scissor_full, p.front, light_contrib_texture, &light_contrib_image);
+            c += draw_hemicube_side(renderer, world, scissor_full, p.right, light_contrib_texture, &light_contrib_image);
+            //c += draw_hemicube_side(renderer, world, scissor_right, p.left, light_contrib_texture, &light_contrib_image);
+            //c += draw_hemicube_side(renderer, world, scissor_bottom, p.up, light_contrib_texture, &light_contrib_image);
+            //c += draw_hemicube_side(renderer, world, scissor_top, p.down, light_contrib_texture, &light_contrib_image);
             ColorUNorm& out_color = ((ColorUNorm*)lightmap.data)[p.pixel_index];
             out_color.r = ((unsigned char)min(c.r, 1.0f)) * 255;
             out_color.g = ((unsigned char)min(c.g, 1.0f)) * 255;

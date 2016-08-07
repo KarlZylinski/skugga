@@ -91,7 +91,7 @@ void Simulation::init(Renderer* renderer, WindowState* window_state)
 
         if (lm.valid)
         {
-            create_light(renderer, &lm.mesh, {2, 20, -29});
+            create_light(renderer, &lm.mesh, {20, 20, 0});
         }
     }
 
