@@ -62,8 +62,9 @@ void map(const World& world, Renderer* renderer)
         Vector4* normals = (Vector4*)normals_image.data;
 
         memset(lightmap.data, 0, lightmap_size);
+        unsigned num_patches = image_size/16;
 
-        for (unsigned pixel_index = 0; pixel_index < image_size/16; ++pixel_index)
+        for (unsigned pixel_index = 0; pixel_index < num_patches; ++pixel_index)
         {
             const Vector3& n = *(Vector3*)&normals[pixel_index];
 
@@ -90,15 +91,21 @@ void map(const World& world, Renderer* renderer)
             renderer->read_back_texture(&light_contrib_image, light_contrib_texture);
 
             Color* contrib_pixels = (Color*)light_contrib_image.data;
-            ColorUNorm& current = *(ColorUNorm*)&lightmap.data[pixel_index * 4];
-            current.a = 255;
-            for (unsigned contrib_index = 0; contrib_index < image_size/16; ++contrib_index)
+            Color total_light = {};
+            for (unsigned contrib_index = 0; contrib_index < num_patches; ++contrib_index)
             {
-                const Color& contrib_pixel = contrib_pixels[contrib_index];
-                current.r = (unsigned char)min(255.0f, (contrib_pixel.r*255.0f) + current.r);
-                current.g = (unsigned char)min(255.0f, (contrib_pixel.g*255.0f) + current.g);
-                current.b = (unsigned char)min(255.0f, (contrib_pixel.b*255.0f) + current.b);
+                total_light += contrib_pixels[contrib_index];
             }
+
+            total_light.r = (total_light.r / num_patches) * 255.0f;
+            total_light.g = (total_light.g / num_patches) * 255.0f;
+            total_light.b = (total_light.b / num_patches) * 255.0f;
+
+            ColorUNorm& out_color = *(ColorUNorm*)&lightmap.data[pixel_index * 4];
+            out_color.r = (unsigned char)min(total_light.r, 255.0f);
+            out_color.g = (unsigned char)min(total_light.g, 255.0f);
+            out_color.b = (unsigned char)min(total_light.b, 255.0f);
+            out_color.a = 255;
         }
 
         File lightmap_file;
