@@ -56,6 +56,11 @@ void operator+=(Vector3& v1, const Vector3& v2)
     v1.z += v2.z;
 }
 
+Vector3 operator-(const Vector3& v)
+{
+    return {-v.x, -v.y, -v.z};
+}
+
 Vector3 operator+(const Vector3& v1, const Vector3& v2)
 {
     return {v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
@@ -219,6 +224,16 @@ Matrix4x4 from_rotation_and_translation(const Quaternion& q, const Vector3& t)
     return out_mat;
 }
 
+Vector3 right(const Matrix4x4& m)
+{
+    return {m.x.x, m.x.y, m.x.z};
+}
+
+Vector3 up(const Matrix4x4& m)
+{
+    return {m.y.x, m.y.y, m.y.z};
+}
+
 } // namespace matrix4x4
 
 namespace vector2
@@ -254,9 +269,37 @@ float length(const Vector3& v)
     return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
+float squared_length(const Vector3& v)
+{
+    return v.x * v.x + v.y * v.y + v.z * v.z;
+}
+
 float dot(const Vector3& v1, const Vector3& v2)
 {
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+Vector3 normalize(const Vector3& v)
+{
+    float len = length(v);
+    return
+    {
+        v.x / len,
+        v.y / len,
+        v.z / len
+    };
+}
+
+Vector3 tangent(const Vector3& v)
+{
+    Vector3 c1 = cross(v, {0.0, 0.0, 1.0});
+    Vector3 c2 = cross(v, {1.0, 0.0, 0.0});
+    return normalize(squared_length(c1) > squared_length(c2) ? c1 : c2);
+}
+
+Vector3 bitangent(const Vector3& v)
+{
+    return normalize(cross(tangent(v), v));
 }
 
 } // namespace vector3
@@ -331,6 +374,15 @@ Quaternion normalize(const Quaternion& q)
         q.z / len,
         q.w / len
     };
+}
+
+Quaternion from_normal(const Vector3& n)
+{
+    static const Vector3 forward = {0, 0, 1};
+    const Vector3 angle = vector3::cross(forward, n);
+    float forward_len = vector3::length(forward);
+    float w = sqrtf(forward_len * forward_len) + vector3::dot(forward, n);
+    return normalize({angle.x, angle.y, angle.z, w});
 }
 
 } // namespace quaternion

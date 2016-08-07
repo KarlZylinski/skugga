@@ -35,7 +35,7 @@ end
 local set_env = arg_contain("set_env")
 local build = arg_contain("build")
 local run = arg_contain("run")
-local run_debug = arg_contain("debug")
+local use_debug = arg_contain("use_debug")
 
 function run_or_die(cmd)
     if os.execute(cmd) ~= 0 then
@@ -62,7 +62,7 @@ if build then
     local extra_compile_opts = "/Os"
     local extra_link_opts = "/debug"
 
-    if run_debug then
+    if use_debug then
         extra_compile_opts = "/D DEBUG"
         extra_link_opts = "/debug"
     end

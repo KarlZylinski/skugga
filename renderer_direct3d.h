@@ -28,6 +28,9 @@ struct RenderTarget
     unsigned width;
     unsigned height;
     ID3D11RenderTargetView* view;
+    bool clear_depth_stencil : 1;
+    bool clear : 1;
+    Color clear_color;
 };
 
 struct Shader
@@ -36,6 +39,8 @@ struct Shader
     ID3D11PixelShader* pixel_shader;
     ID3D11InputLayout* input_layout;
 };
+
+struct Rect;
 
 enum struct DrawLights { DrawLights, DoNotDrawLights };
 
@@ -59,15 +64,21 @@ struct Renderer
     void clear_render_target(RenderTarget* sc, const Color& color);
     void present();
     void read_back_texture(Image* out, const RenderTarget& rt);
+    void pre_draw_frame();
+    void set_scissor_rect(const Rect& r);
+    void disable_scissor();
     void draw_frame(const World& world, const Camera& camera, DrawLights draw_lights);
 
     static const unsigned num_resources = 4096;
+    static const unsigned max_render_targets = 4;
     ID3D11Device* device;
     ID3D11DeviceContext* device_context;
     ID3D11Buffer* constant_buffer;
     ID3D11Texture2D* depth_stencil_texture;
     ID3D11DepthStencilView* depth_stencil_view;
+    ID3D11RasterizerState* raster_state;
     IDXGISwapChain* swap_chain;
     RenderTarget back_buffer;
     Geometry geometries[num_resources];
+    RenderTarget* render_targets[max_render_targets];
 };

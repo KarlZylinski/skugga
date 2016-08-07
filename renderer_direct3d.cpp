@@ -2,6 +2,7 @@
 #include <D3Dcompiler.h>
 #include "world.h"
 #include "config.h"
+#include "rect.h"
 
 namespace
 {
@@ -95,6 +96,22 @@ void Renderer::init(HWND window_handle)
 
     back_buffer = create_back_buffer();
     set_render_target(&back_buffer);
+
+    D3D11_RASTERIZER_DESC rsd;
+    rsd.FillMode = D3D11_FILL_SOLID;
+    rsd.CullMode = D3D11_CULL_BACK;
+    rsd.FrontCounterClockwise = false;
+    rsd.DepthBias = false;
+    rsd.DepthBiasClamp = 0;
+    rsd.SlopeScaledDepthBias = 0;
+    rsd.DepthClipEnable = true;
+    rsd.ScissorEnable = true;
+    rsd.MultisampleEnable = false;
+    rsd.AntialiasedLineEnable = false;
+    device->CreateRasterizerState(&rsd, &raster_state);
+    device_context->RSSetState(raster_state);
+    
+    disable_scissor();
 }
 
 void Renderer::shutdown()
@@ -162,6 +179,9 @@ RenderTarget Renderer::create_back_buffer()
     back_buffer_texture->Release();
     rt.width = td.Width;
     rt.height = td.Height;
+    rt.clear = true;
+    rt.clear_depth_stencil = true;
+    rt.clear_color = {0.2f, 0, 0, 1};
     return rt;
 }
 
@@ -271,17 +291,19 @@ void Renderer::unload_geometry(unsigned geometry_handle)
 
 void Renderer::set_render_target(RenderTarget* rt)
 {
-    device_context->OMSetRenderTargets(1, &rt->view, depth_stencil_view);
+    set_render_targets(&rt, 1);
 }
 
 void Renderer::set_render_targets(RenderTarget** rts, unsigned num)
 {
-    ID3D11RenderTargetView* targets[5];
+    ID3D11RenderTargetView* targets[4];
     for (unsigned i = 0; i < num; ++i)
     {
         targets[i] = rts[i]->view;
     }
     device_context->OMSetRenderTargets(num, targets, depth_stencil_view);
+    memset(render_targets, 0, sizeof(render_targets));
+    memcpy(render_targets, rts, sizeof(RenderTarget**) * num);
 }
 
 void Renderer::draw(unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix, const Object** lights, unsigned num_lights)
@@ -337,11 +359,38 @@ void Renderer::read_back_texture(Image* out, const RenderTarget& rt)
     staging_texture->Release();
 }
 
+void Renderer::pre_draw_frame()
+{
+    bool clear_depth = false;
+    for (unsigned i = 0; i < max_render_targets; ++i)
+    {
+        RenderTarget* r = render_targets[i];
+
+        if (r == nullptr)
+        {
+            continue;
+        }
+
+        if (r->clear)
+        {
+            clear_render_target(r, r->clear_color);
+        }
+
+        if (r->clear_depth_stencil)
+        {
+            clear_depth = true;
+        }
+    }
+
+    if (clear_depth)
+    {
+        clear_depth_stencil();
+    }
+}
+
 void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights draw_lights)
 {
-    /*Color r = {0.2f, 0, 0, 1};
-    clear_depth_stencil();
-    clear_render_target(&back_buffer, r);*/
+    pre_draw_frame();
 
     unsigned num_lights = 0;
     const Object* lights[world.num_lights];
@@ -371,4 +420,24 @@ void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights d
     }
 
     present();
+}
+
+void Renderer::set_scissor_rect(const Rect& r)
+{
+    static D3D11_RECT rect = {};
+    rect.top = r.top;
+    rect.bottom = r.bottom;
+    rect.left = r.left;
+    rect.right = r.right;
+    device_context->RSSetScissorRects(1, &rect);
+}
+
+void Renderer::disable_scissor()
+{
+    D3D11_RECT rect = {};
+    rect.top = 0;
+    rect.bottom = WindowHeight;
+    rect.left = 0;
+    rect.right = WindowWidth;
+    device_context->RSSetScissorRects(1, &rect);
 }

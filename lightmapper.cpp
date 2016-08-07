@@ -2,24 +2,74 @@
 #include "renderer_direct3d.h"
 #include "file.h"
 #include "windows_window.h"
+#include "rect.h"
+#include "config.h"
 
 namespace lightmapper
 {
 
+enum struct PatchClip {
+    None,
+    Top,
+    Bottom,
+    Left,
+    Right
+};
+
 struct Patch
 {
-    Camera camera;
+    Camera front;
+    Camera right;
+    Camera left;
+    Camera up;
+    Camera down;
     unsigned pixel_index;
 };
+
+static const Rect scissor_full = {0, 0, WindowWidth, WindowHeight};
+static const Rect scissor_top = {0, 0, WindowWidth, WindowHeight/2};
+static const Rect scissor_bottom = {0, WindowHeight/2, WindowWidth, WindowHeight};
+static const Rect scissor_left = {0, 0, WindowWidth/2, WindowHeight};
+static const Rect scissor_right = {WindowWidth/2, 0, WindowWidth, WindowHeight};
+
+
+Color draw_hemicube_side(Renderer* renderer, const World& world, const Rect& scissor_rect,
+    const Camera& camera, const RenderTarget& light_contrib_texture, Image* light_contrib_image)
+{
+    renderer->set_scissor_rect(scissor_rect);
+    renderer->draw_frame(world, camera, DrawLights::DrawLights);
+    renderer->read_back_texture(light_contrib_image, light_contrib_texture);
+
+    Color* contrib_pixels = (Color*)light_contrib_image->data;
+    Color total_light = {};
+    unsigned num_pixels = light_contrib_texture.width * light_contrib_texture.height;
+    for (unsigned contrib_index = 0; contrib_index < num_pixels; ++contrib_index)
+    {
+        const Color& cp = contrib_pixels[contrib_index];
+        total_light.r += cp.r;
+        total_light.g += cp.g;
+        total_light.b += cp.b;
+    }
+    return total_light;
+}
 
 void map(const World& world, Renderer* renderer)
 {
     Shader vertex_data_shader = renderer->load_shader(L"uv_data.shader");
     Shader light_contribution_shader = renderer->load_shader(L"light_contribution_calc.shader");
     RenderTarget vertex_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
+    vertex_texture.clear = true;
+    vertex_texture.clear_depth_stencil = true;
+    vertex_texture.clear_color = {0, 0, 0, 1};
     RenderTarget normals_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
+    normals_texture.clear = true;
+    normals_texture.clear_depth_stencil = true;
+    normals_texture.clear_color = {0, 0, 0, 1};
     RenderTarget* vertex_data_rts[] = {&vertex_texture, &normals_texture};
     RenderTarget light_contrib_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
+    light_contrib_texture.clear = true;
+    light_contrib_texture.clear_depth_stencil = true;
+    light_contrib_texture.clear_color = {0, 0, 0, 1};
     Camera vertex_data_camera;
     camera::set_lightmap_rendering_mode(&vertex_data_camera);
     Matrix4x4 view_matrix = camera::calc_view_matrix(vertex_data_camera);
@@ -57,9 +107,7 @@ void map(const World& world, Renderer* renderer)
 
         renderer->set_render_targets(vertex_data_rts, 2);
         renderer->set_shader(&vertex_data_shader);
-        renderer->clear_depth_stencil();
-        renderer->clear_render_target(&vertex_texture, {0, 0, 0, 1});
-        renderer->clear_render_target(&normals_texture, {0, 0, 0, 1});
+        renderer->pre_draw_frame();
         renderer->draw(world.objects[i].geometry_handle, world.objects[i].world_transform, view_matrix, vertex_data_camera.projection_matrix, lights, num_lights);
         renderer->present();
 
@@ -78,41 +126,48 @@ void map(const World& world, Renderer* renderer)
 
             Patch& p = patches[num_patches];
             ++num_patches;
-            camera::set_projection_mode(&p.camera);
             const Vector4& pos = positions[pixel_index];
-            p.camera.position = {pos.x, pos.y, pos.z};
 
-            static const Vector3 forward = {0, 0, 1};
-            const Vector3 angle = vector3::cross(forward, n);
-            float forward_len = vector3::length(forward);
-            float w = sqrtf(forward_len * forward_len) + vector3::dot(forward, n);
-            p.camera.rotation = quaternion::normalize({angle.x, angle.y, angle.z, w});
+            Camera base_cam = {};
+            camera::set_projection_mode(&base_cam);
+            base_cam.position = {pos.x, pos.y, pos.z};
+
+            p.front = base_cam;
+            p.front.rotation = quaternion::from_normal(n);
+
+            p.right = base_cam;
+            p.right.rotation = quaternion::from_normal(vector3::bitangent(n));
+
+            p.left = base_cam;
+            p.left.rotation = quaternion::from_normal(-vector3::bitangent(n));
+
+            p.up = base_cam;
+            p.up.rotation = quaternion::from_normal(vector3::tangent(n));
+
+            p.down = base_cam;
+            p.down.rotation = quaternion::from_normal(-vector3::tangent(n));
+
             p.pixel_index = pixel_index;
         }
 
         memset(lightmap.data, 0, lightmap_size);
+        renderer->set_shader(&light_contribution_shader);
+        renderer->set_render_target(&light_contrib_texture);
+
         for (unsigned patch_index = 0; patch_index < num_patches; ++patch_index)
         {
             const Patch& p = patches[patch_index];
             windows::window::process_all_messsages();
-            renderer->set_shader(&light_contribution_shader);
-            renderer->clear_render_target(&light_contrib_texture, {0, 0, 0, 1});
-            renderer->clear_depth_stencil();
-            renderer->set_render_target(&light_contrib_texture);
-            renderer->draw_frame(world, p.camera, DrawLights::DrawLights);
-            renderer->read_back_texture(&light_contrib_image, light_contrib_texture);
-
-            Color* contrib_pixels = (Color*)light_contrib_image.data;
-            Color total_light = {};
-            for (unsigned contrib_index = 0; contrib_index < num_pixels; ++contrib_index)
-            {
-                total_light += contrib_pixels[contrib_index];
-            }
-
+            Color c = {};
+            c += draw_hemicube_side(renderer, world, scissor_full, p.front, light_contrib_texture, &light_contrib_image);
+            c += draw_hemicube_side(renderer, world, scissor_left, p.right, light_contrib_texture, &light_contrib_image);
+            c += draw_hemicube_side(renderer, world, scissor_right, p.left, light_contrib_texture, &light_contrib_image);
+            c += draw_hemicube_side(renderer, world, scissor_bottom, p.up, light_contrib_texture, &light_contrib_image);
+            c += draw_hemicube_side(renderer, world, scissor_top, p.down, light_contrib_texture, &light_contrib_image);
             ColorUNorm& out_color = ((ColorUNorm*)lightmap.data)[p.pixel_index];
-            out_color.r = ((unsigned char)min(total_light.r, 1.0f)) * 255;
-            out_color.g = ((unsigned char)min(total_light.g, 1.0f)) * 255;
-            out_color.b = ((unsigned char)min(total_light.b, 1.0f)) * 255;
+            out_color.r = ((unsigned char)min(c.r, 1.0f)) * 255;
+            out_color.g = ((unsigned char)min(c.g, 1.0f)) * 255;
+            out_color.b = ((unsigned char)min(c.b, 1.0f)) * 255;
             out_color.a = 255;
         }
 

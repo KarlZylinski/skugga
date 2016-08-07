@@ -38,6 +38,7 @@ Vector2 operator+(const Vector2& v1, const Vector2& v2);
 void operator+=(Vector2i& v1, const Vector2i& v2);
 Vector2i operator+(const Vector2i& v1, const Vector2i& v2);
 void operator+=(Vector3& v1, const Vector3& v2);
+Vector3 operator-(const Vector3& v);
 Vector3 operator+(const Vector3& v1, const Vector3& v2);
 Vector3 operator*(const Vector3& v, float s);
 Vector3 operator*(const Vector3& v1, const Vector3& v2);
@@ -55,6 +56,8 @@ namespace matrix4x4
 Matrix4x4 identity();
 Matrix4x4 inverse(const Matrix4x4& m);
 Matrix4x4 from_rotation_and_translation(const Quaternion& q, const Vector3& t);
+Vector3 right(const Matrix4x4& m);
+Vector3 up(const Matrix4x4& m);
 
 } // namespace matrix4x4
 
@@ -71,7 +74,11 @@ namespace vector3
 bool almost_equal(const Vector3& v1, const Vector3& v2);
 Vector3 cross(const Vector3& v1, const Vector3& v2);
 float length(const Vector3& v);
+float squared_length(const Vector3& v);
 float dot(const Vector3& v1, const Vector3& v2);
+Vector3 tangent(const Vector3& v);
+Vector3 bitangent(const Vector3& v);
+Vector3 normalize(const Vector3& v);
 
 } // namespace vector3
 
@@ -90,5 +97,6 @@ Quaternion rotate_y(const Quaternion& q, float rads);
 Quaternion rotate_z(const Quaternion& q, float rads);
 Quaternion identity();
 Quaternion normalize(const Quaternion& q);
+Quaternion from_normal(const Vector3& n);
 
 } // namespace quaternionQuaternion normalize(const Quaternion& q)

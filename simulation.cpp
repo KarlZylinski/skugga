@@ -43,6 +43,8 @@ static void create_world(World* world, Renderer* renderer)
     world::add_object(world, create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random()));
     world::add_object(world, create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random()));*/
     world::add_object(world, create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random()));
+
+    //world::add_object(world, create_scaled_box(renderer, lm.mesh, {1, 1, 1}, {-10, 0, 0}, color::random()));
 }
 
 static void key_pressed_callback(Key key)
@@ -77,7 +79,7 @@ void Simulation::init(Renderer* renderer, WindowState* window_state)
 
         if (lm.valid)
         {
-            create_light(renderer, &lm.mesh, {2, 20, 5});
+            create_light(renderer, &lm.mesh, {2, 20, 4});
         }
     }
 

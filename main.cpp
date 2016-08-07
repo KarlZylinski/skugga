@@ -26,7 +26,6 @@ int main()
 
     lightmapper::map(simulation.world, &renderer);
 
-    camera::set_projection_mode(&simulation.camera);
     renderer.set_render_target(&renderer.back_buffer);
     Shader default_shader = renderer.load_shader(L"shader.shader");
     renderer.set_shader(&default_shader);
@@ -35,8 +34,6 @@ int main()
     {
         windows::window::process_all_messsages();
         simulation.simulate();
-        renderer.clear_depth_stencil();
-        renderer.clear_render_target(&renderer.back_buffer, {0.2f, 0, 0, 1.0f});
         renderer.draw_frame(simulation.world, simulation.camera, DrawLights::DrawLights);
         keyboard::end_of_frame();
         mouse::end_of_frame();
