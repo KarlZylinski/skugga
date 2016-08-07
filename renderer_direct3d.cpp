@@ -1,6 +1,7 @@
 #include "renderer_direct3d.h"
 #include <D3Dcompiler.h>
 #include "world.h"
+#include "config.h"
 
 namespace
 {
@@ -34,8 +35,8 @@ void Renderer::init(HWND window_handle)
 {
     DXGI_SWAP_CHAIN_DESC scd = {};
     scd.BufferCount = 1;
-    scd.BufferDesc.Width = 800;
-    scd.BufferDesc.Height = 800;
+    scd.BufferDesc.Width = WindowWidth;
+    scd.BufferDesc.Height = WindowHeight;
     scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     scd.OutputWindow = window_handle;
@@ -60,8 +61,8 @@ void Renderer::init(HWND window_handle)
     D3D11_VIEWPORT viewport = {};
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    viewport.Width = 800;
-    viewport.Height = 800;
+    viewport.Width = WindowWidth;
+    viewport.Height = WindowHeight;
     viewport.MinDepth = 0;
     viewport.MaxDepth = 1;
     device_context->RSSetViewports(1, &viewport);
@@ -74,8 +75,8 @@ void Renderer::init(HWND window_handle)
     cbd.StructureByteStride = 0;
     device->CreateBuffer(&cbd, nullptr, &constant_buffer);
     D3D11_TEXTURE2D_DESC dstd = {0};
-    dstd.Width = 800;
-    dstd.Height = 800;
+    dstd.Width = WindowWidth;
+    dstd.Height = WindowHeight;
     dstd.MipLevels = 1;
     dstd.ArraySize = 1;
     dstd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -332,13 +333,15 @@ void Renderer::read_back_texture(Image* out, const RenderTarget& rt)
     device_context->Map(staging_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
     unsigned size = image::size(rt.pixel_format, rtd.Width, rtd.Height);
     memcpy(out->data, mapped_resource.pData, size);
+    device_context->Unmap(staging_texture, 0);
+    staging_texture->Release();
 }
 
 void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights draw_lights)
 {
-    Color r = {0.2f, 0, 0, 1};
+    /*Color r = {0.2f, 0, 0, 1};
     clear_depth_stencil();
-    clear_render_target(&back_buffer, r);
+    clear_render_target(&back_buffer, r);*/
 
     unsigned num_lights = 0;
     const Object* lights[world.num_lights];

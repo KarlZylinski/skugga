@@ -1,5 +1,6 @@
 #include "windows_window.h"
 #include "key.h"
+#include "config.h"
 
 static Key key_from_windows_key_code(WPARAM key, LPARAM flags)
 {
@@ -184,7 +185,7 @@ void init(Window* w)
     wc.lpszClassName = L"Skugga";
     w->window_class = wc;
     RegisterClassEx(&w->window_class);
-    RECT window_rect = {0, 0, 800, 800};
+    RECT window_rect = {0, 0, WindowWidth, WindowHeight};
     AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
     w->handle = CreateWindowEx(
         0,

@@ -37,11 +37,11 @@ static void create_world(World* world, Renderer* renderer)
     float floor_depth = 8;
     float floor_thickness = 0.3f;
     float floor_to_cieling = 2;
-    float pillar_width = 0.4f;
+    //float pillar_width = 0.4f;
 
-    world::add_object(world, create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random()));
+    /*world::add_object(world, create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random()));
     world::add_object(world, create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random()));
-    world::add_object(world, create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random()));
+    world::add_object(world, create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random()));*/
     world::add_object(world, create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random()));
 }
 
@@ -126,5 +126,5 @@ void Simulation::create_light(Renderer* renderer, Mesh* mesh, const Vector3& pos
         mesh->vertices[i].light_emittance = 1.0f;
     }
 
-    world::add_light(&world, create_scaled_box(renderer, *mesh, {1, 1, 1}, position, {1,1,1,1}));
+    world::add_light(&world, create_scaled_box(renderer, *mesh, {10, 10, 10}, position, {1,1,1,1}));
 }

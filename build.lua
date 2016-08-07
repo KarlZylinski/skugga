@@ -35,6 +35,7 @@ end
 local set_env = arg_contain("set_env")
 local build = arg_contain("build")
 local run = arg_contain("run")
+local run_debug = arg_contain("debug")
 
 function run_or_die(cmd)
     if os.execute(cmd) ~= 0 then
@@ -58,16 +59,24 @@ if build then
     lfs.mkdir("build")
 
     local object_files = ""
+    local extra_compile_opts = "/Os"
+    local extra_link_opts = "/debug"
+
+    if run_debug then
+        extra_compile_opts = "/D DEBUG"
+        extra_link_opts = "/debug"
+    end
 
     for _, filename in ipairs(files_to_build) do
         local object_filename = "build\\" .. string.replace_end(filename, 3, "o")
-        local build_cmd = "cl.exe /FI types.h /FI helpers.h /D _HAS_EXCEPTIONS=0 /nologo /W4 /WX /Gm /EHsc /TP /DUNICODE /wd4201 /wd4100 /c /D _CRT_SECURE_NO_WARNINGS /Zi /MTd /D DEBUG /Fo" .. object_filename .. " " .. filename
+
+        local build_cmd = "cl.exe /FI types.h /FI helpers.h /D _HAS_EXCEPTIONS=0 /nologo /W4 /WX /Gm /EHsc /TP /DUNICODE /wd4201 /wd4100 /c /D _CRT_SECURE_NO_WARNINGS /Zi /MTd " .. extra_compile_opts .. " /Fo" .. object_filename .. " " .. filename
         run_or_die(build_cmd)
         object_files = object_files .. object_filename .. " "
     end
 
     if #object_files > 0 then
-        local link_cmd = "link.exe /debug /subsystem:windows /entry:mainCRTStartup d3d11.lib user32.lib dxgi.lib D3DCompiler.lib /out:skugga.exe " .. object_files
+        local link_cmd = "link.exe " .. extra_link_opts .. " /subsystem:windows /entry:mainCRTStartup d3d11.lib user32.lib dxgi.lib D3DCompiler.lib /out:skugga.exe " .. object_files
         run_or_die(link_cmd)
     end
 end

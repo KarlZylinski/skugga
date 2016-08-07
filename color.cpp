@@ -16,3 +16,12 @@ bool almost_equal(const Color& c1, const Color& c2)
 }
 
 } // namesapce color
+
+
+void operator+=(Color& c1, const Color& c2)
+{
+    c1.r += c2.r;
+    c1.g += c2.g;
+    c1.b += c2.b;
+    c1.a += c2.a;
+}

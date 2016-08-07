@@ -35,6 +35,8 @@ int main()
     {
         windows::window::process_all_messsages();
         simulation.simulate();
+        renderer.clear_depth_stencil();
+        renderer.clear_render_target(&renderer.back_buffer, {0.2f, 0, 0, 1.0f});
         renderer.draw_frame(simulation.world, simulation.camera, DrawLights::DrawLights);
         keyboard::end_of_frame();
         mouse::end_of_frame();
