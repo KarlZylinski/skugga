@@ -22,5 +22,6 @@ namespace image
 void init_data(Image* i, Allocator* alloc);
 unsigned pixel_size(PixelFormat pf);
 unsigned size(PixelFormat pf, unsigned size_x, unsigned size_y);
+unsigned size(const Image& image);
 
 } // namespace image

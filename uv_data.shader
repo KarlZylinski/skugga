@@ -38,6 +38,8 @@ POut PShader(float4 position : SV_POSITION, float4 vertex_pos : POSITION, float3
 {
     POut output;
     output.position = mul(model, vertex_pos);
+    output.position.w = 1.0f;
     output.normal = mul(model, normal);
+    output.normal.w = 1.0f;
     return output;
 }

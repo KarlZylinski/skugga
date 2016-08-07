@@ -27,4 +27,9 @@ unsigned size(PixelFormat pf, unsigned size_x, unsigned size_y)
     return size_x * size_y * pixel_size(pf);
 }
 
+unsigned size(const Image& image)
+{
+    return size(image.pixel_format, image.width, image.height);
+}
+
 } // namespace image
