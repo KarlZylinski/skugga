@@ -35,7 +35,7 @@ int main()
     //{
         windows::window::process_all_messsages();
         simulation.simulate();
-        renderer.draw_frame(simulation.world, simulation.camera);
+        renderer.draw_frame(simulation.world, simulation.camera, DrawLights::DrawLights);
         keyboard::end_of_frame();
         mouse::end_of_frame();
     //}
@@ -79,7 +79,7 @@ int main()
     {
         windows::window::process_all_messsages();
         simulation.simulate();
-        renderer.draw_frame(simulation.world, simulation.camera);
+        renderer.draw_frame(simulation.world, simulation.camera, DrawLights::DrawLights);
         keyboard::end_of_frame();
         mouse::end_of_frame();
     }

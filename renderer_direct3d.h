@@ -35,6 +35,8 @@ struct Shader
     ID3D11InputLayout* input_layout;
 };
 
+enum struct DrawLights { DrawLights, DoNotDrawLights };
+
 struct Renderer
 {
     void init(HWND window_handle);
@@ -55,7 +57,7 @@ struct Renderer
     void clear_render_target(RenderTarget* sc, const Color& color);
     void present();
     Image read_back_texture(Allocator* alloc, const RenderTarget& rt);
-    void draw_frame(const World& world, const Camera& camera);
+    void draw_frame(const World& world, const Camera& camera, DrawLights draw_lights);
 
     static const unsigned num_resources = 4096;
     ID3D11Device* device;

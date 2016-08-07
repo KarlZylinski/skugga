@@ -77,7 +77,7 @@ void Simulation::init(Renderer* renderer, WindowState* window_state)
 
         if (lm.valid)
         {
-            create_light(renderer, lm.mesh, {29, 20, -30});
+            create_light(renderer, &lm.mesh, {29, 20, -30});
         }
     }
 
@@ -119,7 +119,12 @@ void Simulation::simulate()
     camera.position += *(Vector3*)&movement_rotated.w.x;
 }
 
-void Simulation::create_light(Renderer* renderer, const Mesh& mesh, const Vector3& position)
+void Simulation::create_light(Renderer* renderer, Mesh* mesh, const Vector3& position)
 {
-    world::add_light(&world, create_scaled_box(renderer, mesh, {1, 1, 1}, position, {1,1,1,1}));
+    for (unsigned i = 0; i < mesh->vertices.num; ++i)
+    {
+        mesh->vertices[i].light_emittance = 1.0f;
+    }
+
+    world::add_light(&world, create_scaled_box(renderer, *mesh, {1, 1, 1}, position, {1,1,1,1}));
 }

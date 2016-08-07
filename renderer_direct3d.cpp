@@ -338,7 +338,7 @@ Image Renderer::read_back_texture(Allocator* alloc, const RenderTarget& rt)
     return i;
 }
 
-void Renderer::draw_frame(const World& world, const Camera& camera)
+void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights draw_lights)
 {
     Color r = {0.2f, 0, 0, 1};
     clear_depth_stencil();
@@ -355,10 +355,20 @@ void Renderer::draw_frame(const World& world, const Camera& camera)
         }
     }
 
+    Matrix4x4 view_matrix = camera::calc_view_matrix(camera);
+
     for (unsigned i = 0; i < world.num_objects; ++i)
     {
         if (world.objects[i].valid)
-            draw(world.objects[i].geometry_handle, world.objects[i].world_transform, camera::calc_view_matrix(camera), camera.projection_matrix, lights, num_lights);
+            draw(world.objects[i].geometry_handle, world.objects[i].world_transform, view_matrix, camera.projection_matrix, lights, num_lights);
+    }
+
+    if (draw_lights == DrawLights::DrawLights)
+    {
+        for (unsigned i = 0; i < num_lights; ++i)
+        {
+            draw(lights[i]->geometry_handle, lights[i]->world_transform, view_matrix, camera.projection_matrix, lights, num_lights);
+        }
     }
 
     present();
