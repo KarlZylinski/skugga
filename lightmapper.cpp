@@ -6,6 +6,12 @@
 namespace lightmapper
 {
 
+struct Patch
+{
+    Camera camera;
+    unsigned pixel_index;
+};
+
 void map(const World& world, Renderer* renderer)
 {
     Shader vertex_data_shader = renderer->load_shader(L"uv_data.shader");
@@ -41,6 +47,9 @@ void map(const World& world, Renderer* renderer)
     image::init_data(&lightmap, &ta);
     unsigned lightmap_size = image::size(lightmap);
 
+    unsigned num_pixels = vertex_image.width * vertex_image.height;
+    Patch* patches = (Patch*)ta.alloc(num_pixels * sizeof(Patch));
+
     for (unsigned i = 0; i < world.num_objects; ++i)
     {
         if (!world.objects[i].valid)
@@ -55,56 +64,55 @@ void map(const World& world, Renderer* renderer)
         renderer->present();
 
         renderer->read_back_texture(&vertex_image, vertex_texture);
-        unsigned image_size = image::size(vertex_image.pixel_format, vertex_image.width, vertex_image.height);
         Vector4* positions = (Vector4*)vertex_image.data;
-
         renderer->read_back_texture(&normals_image, normals_texture);
         Vector4* normals = (Vector4*)normals_image.data;
 
-        memset(lightmap.data, 0, lightmap_size);
-        unsigned num_patches = image_size/16;
-
-        for (unsigned pixel_index = 0; pixel_index < num_patches; ++pixel_index)
+        unsigned num_patches = 0;
+        for (unsigned pixel_index = 0; pixel_index < num_pixels; ++pixel_index)
         {
             const Vector3& n = *(Vector3*)&normals[pixel_index];
 
             if (n.x == 0.0f && n.y == 0.0f && n.z == 0.0f)
                 continue;
 
-            const Vector4& p = positions[pixel_index];
-            static Camera patch_camera;
-            camera::set_projection_mode(&patch_camera);
-            patch_camera.position = Vector3 {p.x, p.y, p.z};
-            
+            Patch& p = patches[num_patches];
+            ++num_patches;
+            camera::set_projection_mode(&p.camera);
+            const Vector4& pos = positions[pixel_index];
+            p.camera.position = {pos.x, pos.y, pos.z};
+
             static const Vector3 forward = {0, 0, 1};
             const Vector3 angle = vector3::cross(forward, n);
             float forward_len = vector3::length(forward);
             float w = sqrtf(forward_len * forward_len) + vector3::dot(forward, n);
-            patch_camera.rotation = quaternion::normalize({angle.x, angle.y, angle.z, w});
+            p.camera.rotation = quaternion::normalize({angle.x, angle.y, angle.z, w});
+            p.pixel_index = pixel_index;
+        }
 
+        memset(lightmap.data, 0, lightmap_size);
+        for (unsigned patch_index = 0; patch_index < num_patches; ++patch_index)
+        {
+            const Patch& p = patches[patch_index];
             windows::window::process_all_messsages();
-            renderer->clear_render_target(&light_contrib_texture, {0, 0, 0, 1});
-            renderer->set_render_target(&light_contrib_texture);
             renderer->set_shader(&light_contribution_shader);
-            renderer->draw_frame(world, patch_camera, DrawLights::DrawLights);
-
+            renderer->clear_render_target(&light_contrib_texture, {0, 0, 0, 1});
+            renderer->clear_depth_stencil();
+            renderer->set_render_target(&light_contrib_texture);
+            renderer->draw_frame(world, p.camera, DrawLights::DrawLights);
             renderer->read_back_texture(&light_contrib_image, light_contrib_texture);
 
             Color* contrib_pixels = (Color*)light_contrib_image.data;
             Color total_light = {};
-            for (unsigned contrib_index = 0; contrib_index < num_patches; ++contrib_index)
+            for (unsigned contrib_index = 0; contrib_index < num_pixels; ++contrib_index)
             {
                 total_light += contrib_pixels[contrib_index];
             }
 
-            total_light.r = (total_light.r / num_patches) * 255.0f;
-            total_light.g = (total_light.g / num_patches) * 255.0f;
-            total_light.b = (total_light.b / num_patches) * 255.0f;
-
-            ColorUNorm& out_color = *(ColorUNorm*)&lightmap.data[pixel_index * 4];
-            out_color.r = (unsigned char)min(total_light.r, 255.0f);
-            out_color.g = (unsigned char)min(total_light.g, 255.0f);
-            out_color.b = (unsigned char)min(total_light.b, 255.0f);
+            ColorUNorm& out_color = ((ColorUNorm*)lightmap.data)[p.pixel_index];
+            out_color.r = ((unsigned char)min(total_light.r, 1.0f)) * 255;
+            out_color.g = ((unsigned char)min(total_light.g, 1.0f)) * 255;
+            out_color.b = ((unsigned char)min(total_light.b, 1.0f)) * 255;
             out_color.a = 255;
         }
 
