@@ -25,6 +25,8 @@ struct RenderTarget
 {
     ID3D11Texture2D* texture;
     PixelFormat pixel_format;
+    unsigned width;
+    unsigned height;
     ID3D11RenderTargetView* view;
 };
 
@@ -56,7 +58,7 @@ struct Renderer
     void clear_depth_stencil();
     void clear_render_target(RenderTarget* sc, const Color& color);
     void present();
-    Image read_back_texture(Allocator* alloc, const RenderTarget& rt);
+    void read_back_texture(Image* out, const RenderTarget& rt);
     void draw_frame(const World& world, const Camera& camera, DrawLights draw_lights);
 
     static const unsigned num_resources = 4096;

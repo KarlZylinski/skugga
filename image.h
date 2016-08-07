@@ -1,5 +1,7 @@
 #pragma once
 
+struct Allocator;
+
 enum struct PixelFormat
 {
     R8G8B8A8_UINT_NORM,
@@ -8,15 +10,16 @@ enum struct PixelFormat
 
 struct Image
 {
-    unsigned char* data;
     unsigned width;
     unsigned height;
     PixelFormat pixel_format;
+    unsigned char* data;
 };
 
 namespace image
 {
 
+void init_data(Image* i, Allocator* alloc);
 unsigned pixel_size(PixelFormat pf);
 unsigned size(PixelFormat pf, unsigned size_x, unsigned size_y);
 

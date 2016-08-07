@@ -23,7 +23,6 @@ void set_projection_mode(Camera* c)
         0, 0, far_plane/(far_plane-near_plane), 1,
         0, 0, (-far_plane * near_plane) / (far_plane - near_plane), 0 
     };
-    c->rotation = quaternion::identity();
 }
 
 void set_lightmap_rendering_mode(Camera* c)

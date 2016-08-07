@@ -41,11 +41,15 @@ int main()
     //}
 
     Allocator ta = create_temp_allocator();
-    Image vertex_image = renderer.read_back_texture(&ta, vertex_texture);
+    Image vertex_image = {vertex_texture.width, vertex_texture.height, vertex_texture.pixel_format};
+    image::init_data(&vertex_image, &ta);
+    renderer.read_back_texture(&vertex_image, vertex_texture);
     unsigned image_size = image::size(vertex_image.pixel_format, vertex_image.width, vertex_image.height);
     Vector4* positions = (Vector4*)vertex_image.data;
 
-    Image normals_image = renderer.read_back_texture(&ta, normals_texture);
+    Image normals_image = {normals_texture.width, normals_texture.height, normals_texture.pixel_format};
+    image::init_data(&normals_image, &ta);
+    renderer.read_back_texture(&normals_image, normals_texture);
     Vector4* normals = (Vector4*)normals_image.data;
 
     int lax = 0;
@@ -59,7 +63,6 @@ int main()
             {
                 const Vector4& p = positions[i];
                 const Vector3& n = *(Vector3*)&normals[i];
-                camera::set_projection_mode(&simulation.camera);
                 simulation.camera.position = Vector3 {p.x, p.y, p.z};
                 Vector3 forward = {0, 0, 1};
                 Vector3 angle = vector3::cross(forward, n);
@@ -71,6 +74,7 @@ int main()
         }
     }
     
+    camera::set_projection_mode(&simulation.camera);
     renderer.set_render_target(&renderer.back_buffer);
     Shader default_shader = renderer.load_shader(L"shader.shader");
     renderer.set_shader(&default_shader);

@@ -1,7 +1,13 @@
 #include "image.h"
+#include "memory.h"
 
 namespace image
 {
+
+void init_data(Image* i, Allocator* alloc)
+{
+    i->data = (unsigned char*)alloc->alloc(size(i->pixel_format, i->width, i->height));
+}
 
 unsigned pixel_size(PixelFormat pf)
 {

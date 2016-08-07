@@ -159,6 +159,8 @@ RenderTarget Renderer::create_back_buffer()
 
     device->CreateRenderTargetView(back_buffer_texture, nullptr, &rt.view);
     back_buffer_texture->Release();
+    rt.width = td.Width;
+    rt.height = td.Height;
     return rt;
 }
 
@@ -186,6 +188,8 @@ RenderTarget Renderer::create_render_texture(PixelFormat pf)
     RenderTarget rt = {};
     rt.texture = texture;
     rt.pixel_format = pf;
+    rt.width = rtd.Width;
+    rt.height = rtd.Height;
     device->CreateRenderTargetView(texture, &rtvd, &rt.view);
     return rt;
 }
@@ -314,7 +318,7 @@ void Renderer::present()
     swap_chain->Present(0, 0);
 }
 
-Image Renderer::read_back_texture(Allocator* alloc, const RenderTarget& rt)
+void Renderer::read_back_texture(Image* out, const RenderTarget& rt)
 {
     D3D11_TEXTURE2D_DESC rtd = {};
     rt.texture->GetDesc(&rtd);
@@ -327,15 +331,7 @@ Image Renderer::read_back_texture(Allocator* alloc, const RenderTarget& rt)
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
     device_context->Map(staging_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
     unsigned size = image::size(rt.pixel_format, rtd.Width, rtd.Height);
-    unsigned char* p = (unsigned char*)alloc->alloc(size);
-    memcpy(p, mapped_resource.pData, size);
-    device_context->Unmap(staging_texture, 0);
-    Image i = {};
-    i.pixel_format = rt.pixel_format;
-    i.width = rtd.Width;
-    i.height = rtd.Height;
-    i.data = p;
-    return i;
+    memcpy(out->data, mapped_resource.pData, size);
 }
 
 void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights draw_lights)
