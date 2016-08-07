@@ -125,9 +125,10 @@ Shader Renderer::load_shader(const wchar* filename)
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0}
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"LIGHT_EMITTANCE", 0, DXGI_FORMAT_R32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
-    device->CreateInputLayout(ied, 4, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &s.input_layout);
+    device->CreateInputLayout(ied, 5, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &s.input_layout);
     vs_blob->Release();
     ps_blob->Release();
     return s;
@@ -278,14 +279,15 @@ void Renderer::set_render_targets(RenderTarget** rts, unsigned num)
     device_context->OMSetRenderTargets(num, targets, depth_stencil_view);
 }
 
-void Renderer::draw(unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)
+void Renderer::draw(unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix, const Object** lights, unsigned num_lights)
 {
     auto geometry = geometries[geometry_handle];
     ConstantBuffer constant_buffer_data = {};
     constant_buffer_data.model_view_projection = world_transform_matrix * view_matrix * projection_matrix;
     constant_buffer_data.model = world_transform_matrix;
     constant_buffer_data.projection = projection_matrix;
-    constant_buffer_data.sun_position = {290, 200, -300, 1};
+    const Object& light = *lights[0];
+    constant_buffer_data.sun_position = {light.world_transform.w.x, light.world_transform.w.y, light.world_transform.w.z, 1};
     set_constant_buffers(constant_buffer_data);
     device_context->VSSetConstantBuffers(0, 1, &constant_buffer);
     device_context->PSSetConstantBuffers(0, 1, &constant_buffer);
@@ -342,10 +344,21 @@ void Renderer::draw_frame(const World& world, const Camera& camera)
     clear_depth_stencil();
     clear_render_target(&back_buffer, r);
 
+    unsigned num_lights = 0;
+    const Object* lights[world.num_lights];
+    for (unsigned i = 0; i < world.num_lights; ++i)
+    {
+        if (world.lights[i].valid)
+        {
+            lights[num_lights] = &world.lights[i];
+            ++num_lights;
+        }
+    }
+
     for (unsigned i = 0; i < world.num_objects; ++i)
     {
         if (world.objects[i].valid)
-            draw(world.objects[i].geometry_handle, world.objects[i].world_transform, camera::calc_view_matrix(camera), camera.projection_matrix);
+            draw(world.objects[i].geometry_handle, world.objects[i].world_transform, camera::calc_view_matrix(camera), camera.projection_matrix, lights, num_lights);
     }
 
     present();

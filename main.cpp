@@ -65,7 +65,7 @@ int main()
                 Vector3 angle = vector3::cross(forward, n);
                 float forward_len = vector3::length(forward);
                 float w = sqrtf(forward_len * forward_len) + vector3::dot(forward, n);
-                simulation.camera.rotation = quaternion::normalize({ angle.x, angle.y, angle.z, w });
+                simulation.camera.rotation = quaternion::normalize({angle.x, angle.y, angle.z, w});
                 break;
             }
         }
@@ -74,7 +74,6 @@ int main()
     renderer.set_render_target(&renderer.back_buffer);
     Shader default_shader = renderer.load_shader(L"shader.shader");
     renderer.set_shader(&default_shader);
-    //simulation.camera.position = Vector3 { camera_pos.x, camera_pos.y, camera_pos.z };
 
     while(!window.state.closed)
     {

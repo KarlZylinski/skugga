@@ -15,7 +15,7 @@ struct VOut
     float4 color : COLOR;
 };
 
-VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR)
+VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR, float light_emittance : LIGHT_EMITTANCE)
 {
     VOut output;
 

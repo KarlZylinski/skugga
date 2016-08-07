@@ -50,7 +50,7 @@ struct Renderer
     void unload_geometry(unsigned geometry_handle);
     void set_render_target(RenderTarget* rt);
     void set_render_targets(RenderTarget** rt, unsigned num);
-    void draw(unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix);
+    void draw(unsigned geometry_handle, const Matrix4x4& world_transform_matrix, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix, const Object** lights, unsigned num_lights);
     void clear_depth_stencil();
     void clear_render_target(RenderTarget* sc, const Color& color);
     void present();
