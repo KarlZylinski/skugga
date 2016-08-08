@@ -12,5 +12,4 @@ struct Simulation
     void create_light(Renderer* renderer, Mesh* mesh, const Vector3& position);
     Camera camera;
     World world;
-    Object* sun;
 };

@@ -3,7 +3,6 @@ cbuffer ConstantBuffer : register(b0)
     float4x4 model_view_projection;
     float4x4 model;
     float4x4 projection;
-    float4 sun_position;
 };
 
 struct VOut

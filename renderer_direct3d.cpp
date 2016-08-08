@@ -307,15 +307,13 @@ void Renderer::set_render_targets(RenderTarget** rts, unsigned num)
     memcpy(render_targets, rts, sizeof(RenderTarget**) * num);
 }
 
-void Renderer::draw(const Object& object, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix, const Object** lights, unsigned num_lights)
+void Renderer::draw(const Object& object, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)
 {
     auto geometry = geometries[object.geometry_handle];
     ConstantBuffer constant_buffer_data = {};
     constant_buffer_data.model_view_projection = object.world_transform * view_matrix * projection_matrix;
     constant_buffer_data.model = object.world_transform;
     constant_buffer_data.projection = projection_matrix;
-    const Object& light = *lights[0];
-    constant_buffer_data.sun_position = {light.world_transform.w.x, light.world_transform.w.y, light.world_transform.w.z, 1};
     set_constant_buffers(constant_buffer_data);
     device_context->VSSetConstantBuffers(0, 1, &constant_buffer);
     device_context->PSSetConstantBuffers(0, 1, &constant_buffer);
@@ -397,31 +395,20 @@ void Renderer::pre_draw_frame()
 void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights draw_lights)
 {
     pre_draw_frame();
-
-    unsigned num_lights = 0;
-    const Object* lights[world.num_lights];
-    for (unsigned i = 0; i < world.num_lights; ++i)
-    {
-        if (world.lights[i].valid)
-        {
-            lights[num_lights] = &world.lights[i];
-            ++num_lights;
-        }
-    }
-
     Matrix4x4 view_matrix = camera::calc_view_matrix(camera);
 
     for (unsigned i = 0; i < world.num_objects; ++i)
     {
         if (world.objects[i].valid)
-            draw(world.objects[i], view_matrix, camera.projection_matrix, lights, num_lights);
+            draw(world.objects[i], view_matrix, camera.projection_matrix);
     }
 
     if (draw_lights == DrawLights::DrawLights)
     {
-        for (unsigned i = 0; i < num_lights; ++i)
+        for (unsigned i = 0; i < world.num_lights; ++i)
         {
-            draw(world.lights[i], view_matrix, camera.projection_matrix, lights, num_lights);
+            if (world.lights[i].valid)
+                draw(world.lights[i], view_matrix, camera.projection_matrix);
         }
     }
 
@@ -448,10 +435,9 @@ void Renderer::disable_scissor()
     device_context->RSSetScissorRects(1, &rect);
 }
 
-LoadedTexture Renderer::load_texture(wchar* filename)
+LoadedTexture Renderer::load_texture(Allocator* allocator, wchar* filename)
 {
-    Allocator ta = create_temp_allocator();
-    LoadedFile loaded_texture = file::load(&ta, filename);
+    LoadedFile loaded_texture = file::load(allocator, filename);
 
     if (!loaded_texture.valid)
         return {false};

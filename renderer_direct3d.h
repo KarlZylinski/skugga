@@ -12,7 +12,6 @@ struct ConstantBuffer
     Matrix4x4 model_view_projection;
     Matrix4x4 model;
     Matrix4x4 projection;
-    Vector4 sun_position;
 };
 
 struct Geometry {
@@ -41,7 +40,7 @@ struct Texture
 
 struct LoadedTexture
 {
-    bool valid;
+    bool valid ;
     Texture texture;
 };
 
@@ -71,7 +70,7 @@ struct Renderer
     void unload_geometry(unsigned geometry_handle);
     void set_render_target(RenderTarget* rt);
     void set_render_targets(RenderTarget** rt, unsigned num);
-    void draw(const Object& object, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix, const Object** lights, unsigned num_lights);
+    void draw(const Object& object, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix);
     void clear_depth_stencil();
     void clear_render_target(RenderTarget* sc, const Color& color);
     void present();
@@ -80,7 +79,7 @@ struct Renderer
     void set_scissor_rect(const Rect& r);
     void disable_scissor();
     void draw_frame(const World& world, const Camera& camera, DrawLights draw_lights);
-    LoadedTexture load_texture(wchar* filename);
+    LoadedTexture load_texture(Allocator* allocator, wchar* filename);
 
     static const unsigned num_resources = 4096;
     static const unsigned max_render_targets = 4;

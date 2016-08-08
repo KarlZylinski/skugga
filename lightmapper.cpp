@@ -9,14 +9,6 @@
 namespace lightmapper
 {
 
-enum struct PatchClip {
-    None,
-    Top,
-    Bottom,
-    Left,
-    Right
-};
-
 struct Patch
 {
     Camera front;
@@ -32,7 +24,6 @@ static const Rect scissor_top = {0, 0, WindowWidth, WindowHeight/2};
 static const Rect scissor_bottom = {0, WindowHeight/2, WindowWidth, WindowHeight};
 static const Rect scissor_left = {0, 0, WindowWidth/2, WindowHeight};
 static const Rect scissor_right = {WindowWidth/2, 0, WindowWidth, WindowHeight};
-
 
 Color draw_hemicube_side(Renderer* renderer, const World& world, const Rect& scissor_rect,
     const Camera& camera, const RenderTarget& light_contrib_texture, Image* light_contrib_image)
@@ -75,17 +66,6 @@ void map(const World& world, Renderer* renderer)
     camera::set_lightmap_rendering_mode(&vertex_data_camera);
     Matrix4x4 view_matrix = camera::calc_view_matrix(vertex_data_camera);
 
-    unsigned num_lights = 0;
-    const Object* lights[world.num_lights];
-    for (unsigned i = 0; i < world.num_lights; ++i)
-    {
-        if (world.lights[i].valid)
-        {
-            lights[num_lights] = &world.lights[i];
-            ++num_lights;
-        }
-    }
-
     Allocator ta = create_temp_allocator();
     Image vertex_image = {vertex_texture.width, vertex_texture.height, vertex_texture.pixel_format};
     image::init_data(&vertex_image, &ta);
@@ -109,7 +89,7 @@ void map(const World& world, Renderer* renderer)
         renderer->set_render_targets(vertex_data_rts, 2);
         renderer->set_shader(&vertex_data_shader);
         renderer->pre_draw_frame();
-        renderer->draw(world.objects[i], view_matrix, vertex_data_camera.projection_matrix, lights, num_lights);
+        renderer->draw(world.objects[i], view_matrix, vertex_data_camera.projection_matrix);
         renderer->present();
 
         renderer->read_back_texture(&vertex_image, vertex_texture);

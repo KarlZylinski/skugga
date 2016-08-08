@@ -27,7 +27,8 @@ static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3
 
     static wchar lightmap_filename[256];
     wsprintf(lightmap_filename, L"%d.data", id);
-    LoadedTexture lt = renderer->load_texture(lightmap_filename);
+    Allocator ta = create_temp_allocator();
+    LoadedTexture lt = renderer->load_texture(&ta, lightmap_filename);
 
     if (lt.valid)
     {
