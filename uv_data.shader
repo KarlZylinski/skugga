@@ -25,7 +25,7 @@ VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEX
 {
     VOut output;
 
-    output.position = mul(projection, float4(uv, 0, 1));
+    output.position = mul(projection, float4(float2(1,1)-uv, 0, 1));
     output.vertex_pos = position;
     output.normal = normal;
     output.uv = uv;

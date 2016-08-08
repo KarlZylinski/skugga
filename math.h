@@ -52,6 +52,7 @@ Vector4 operator*(const Vector4& v1, const Vector4& v2);
 Vector4 operator*(const Vector4& v, const Matrix4x4& m);
 Matrix4x4 operator*(const Matrix4x4& m, float s);
 Vector4 operator-(const Vector4& v1, const Vector4& v2);
+Quaternion operator*(const Quaternion& a, const Quaternion& b);
 
 namespace matrix4x4
 {

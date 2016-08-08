@@ -131,6 +131,17 @@ Vector4 operator-(const Vector4& v1, const Vector4& v2)
     return {v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w};
 }
 
+Quaternion operator*(const Quaternion& a, const Quaternion& b)
+{
+    return
+    {
+        a.x * b.w + a.w * b.x + a.y * b.z - a.z * b.y,
+        a.y * b.w + a.w * b.y + a.z * b.x - a.x * b.z,
+        a.z * b.w + a.w * b.z + a.x * b.y - a.y * b.x,
+        a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z
+    };
+}
+
 namespace matrix4x4
 {
 
@@ -298,7 +309,7 @@ Vector3 normalize(const Vector3& v)
 Vector3 tangent(const Vector3& v)
 {
     Vector3 c1 = cross(v, {0.0, 0.0, 1.0});
-    Vector3 c2 = cross(v, {1.0, 0.0, 0.0});
+    Vector3 c2 = cross(v, {0.0, 1.0, 0.0});
     return normalize(squared_length(c1) > squared_length(c2) ? c1 : c2);
 }
 
@@ -369,12 +380,12 @@ Quaternion from_axis_angle(const Vector3& axis, float angle)
     float half_angle = angle * 0.5f;
     float s = sin(half_angle);
     return
-    {
+    normalize({
         axis.x * s,
         axis.y * s,
         axis.z * s,
         cos(half_angle)
-    };
+    });
 }
 
 Quaternion identity()
@@ -402,7 +413,7 @@ Quaternion look_at(const Vector3& source, const Vector3& dest)
 
     if (fabs(dot - (-1.0f)) < 0.00001f)
     {
-        return {0, 1, 0, PI};
+        return {0, 1, 0, 0};
     }
 
     if (fabs(dot - 1.0f) < 0.000001f)
