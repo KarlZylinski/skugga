@@ -50,18 +50,9 @@ void map(const World& world, Renderer* renderer)
     RRHandle vertex_data_shader = renderer->load_shader(L"uv_data.shader");
     RRHandle light_contribution_shader = renderer->load_shader(L"light_contribution_calc.shader");
     RenderTarget vertex_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
-    vertex_texture.clear = true;
-    vertex_texture.clear_depth_stencil = true;
-    vertex_texture.clear_color = {0, 0, 0, 1};
     RenderTarget normals_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
-    normals_texture.clear = true;
-    normals_texture.clear_depth_stencil = true;
-    normals_texture.clear_color = {0, 0, 0, 1};
     RenderTarget* vertex_data_rts[] = {&vertex_texture, &normals_texture};
     RenderTarget light_contrib_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
-    light_contrib_texture.clear = true;
-    light_contrib_texture.clear_depth_stencil = true;
-    light_contrib_texture.clear_color = {0, 0, 0, 1};
     Camera vertex_data_camera;
     camera::set_lightmap_rendering_mode(&vertex_data_camera);
     Matrix4x4 view_matrix = camera::calc_view_matrix(vertex_data_camera);

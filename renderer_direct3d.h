@@ -22,14 +22,19 @@ struct Geometry {
 
 struct RenderTarget
 {
-    ID3D11Texture2D* texture;
     PixelFormat pixel_format;
     unsigned width;
     unsigned height;
-    ID3D11RenderTargetView* view;
     bool clear_depth_stencil : 1;
     bool clear : 1;
     Color clear_color;
+    RRHandle render_resource;
+};
+
+struct RenderTargetResource
+{
+    ID3D11Texture2D* texture;
+    ID3D11RenderTargetView* view;
 };
 
 struct Texture
@@ -43,7 +48,8 @@ enum struct RenderResourceType
     Unused,
     Geometry,
     Texture,
-    Shader
+    Shader,
+    RenderTarget
 };
 
 struct Shader
@@ -61,6 +67,7 @@ struct RenderResource
         Geometry geometry;
         Texture texture;
         Shader shader;
+        RenderTargetResource render_target;
     };
 };
 

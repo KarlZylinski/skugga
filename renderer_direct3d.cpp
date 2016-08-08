@@ -170,15 +170,26 @@ void Renderer::set_shader(RRHandle shader)
 
 RenderTarget Renderer::create_back_buffer()
 {
-    RenderTarget rt = {};
+    unsigned handle = find_free_resource_handle();
+    Assert(handle != InvalidHandle, "Couldn't create back-buffer.");
+
+    RenderTargetResource rts = {};
     ID3D11Texture2D* back_buffer_texture;
     swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back_buffer_texture);
 
     D3D11_TEXTURE2D_DESC td = {};
     back_buffer_texture->GetDesc(&td);
 
-    device->CreateRenderTargetView(back_buffer_texture, nullptr, &rt.view);
+    device->CreateRenderTargetView(back_buffer_texture, nullptr, &rts.view);
     back_buffer_texture->Release();
+
+    RenderResource r = {};
+    r.type = RenderResourceType::RenderTarget;
+    r.render_target = rts;
+    resources[handle] = r;
+
+    RenderTarget rt;
+    rt.render_resource = {handle};
     rt.width = td.Width;
     rt.height = td.Height;
     rt.clear = true;
@@ -189,6 +200,9 @@ RenderTarget Renderer::create_back_buffer()
 
 RenderTarget Renderer::create_render_texture(PixelFormat pf)
 {
+    unsigned handle = find_free_resource_handle();
+    Assert(handle != InvalidHandle, "Couldn't create render texture.");
+
     DXGI_SWAP_CHAIN_DESC scd = {};
     swap_chain->GetDesc(&scd);
     D3D11_TEXTURE2D_DESC rtd = {};
@@ -208,12 +222,23 @@ RenderTarget Renderer::create_render_texture(PixelFormat pf)
     rtvd.Format = rtd.Format;
     rtvd.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
     rtvd.Texture2D.MipSlice = 0;
+
+    RenderTargetResource rts = {};
+    rts.texture = texture;
+    device->CreateRenderTargetView(texture, &rtvd, &rts.view);
+    RenderResource r = {};
+    r.type = RenderResourceType::RenderTarget;
+    r.render_target = rts;
+    resources[handle] = r;
+
     RenderTarget rt = {};
-    rt.texture = texture;
+    rt.render_resource = {handle};
     rt.pixel_format = pf;
     rt.width = rtd.Width;
     rt.height = rtd.Height;
-    device->CreateRenderTargetView(texture, &rtvd, &rt.view);
+    rt.clear = true;
+    rt.clear_depth_stencil = true;
+    rt.clear_color = {0, 0, 0, 1};
     return rt;
 }
 
@@ -303,6 +328,14 @@ void Renderer::unload_resource(RRHandle handle)
             res.shader.pixel_shader->Release();
             break;
 
+        case RenderResourceType::RenderTarget:
+            res.render_target.view->Release();
+
+            if (res.render_target.texture != nullptr)
+                res.render_target.texture->Release();
+            
+            break;
+
         default:
             if (res.type != RenderResourceType::Unused)
             {
@@ -324,7 +357,7 @@ void Renderer::set_render_targets(RenderTarget** rts, unsigned num)
     ID3D11RenderTargetView* targets[4];
     for (unsigned i = 0; i < num; ++i)
     {
-        targets[i] = rts[i]->view;
+        targets[i] = get_resource(rts[i]->render_resource).render_target.view;
     }
     device_context->OMSetRenderTargets(num, targets, depth_stencil_view);
     memset(render_targets, 0, sizeof(render_targets));
@@ -362,7 +395,7 @@ void Renderer::clear_depth_stencil()
 
 void Renderer::clear_render_target(RenderTarget* sc, const Color& color)
 {
-    device_context->ClearRenderTargetView(sc->view, &color.r);
+    device_context->ClearRenderTargetView(get_resource(sc->render_resource).render_target.view, &color.r);
 }
 
 void Renderer::present()
@@ -373,13 +406,14 @@ void Renderer::present()
 void Renderer::read_back_texture(Image* out, const RenderTarget& rt)
 {
     D3D11_TEXTURE2D_DESC rtd = {};
-    rt.texture->GetDesc(&rtd);
+    ID3D11Texture2D* texture = get_resource(rt.render_resource).render_target.texture;
+    texture->GetDesc(&rtd);
     rtd.Usage = D3D11_USAGE_STAGING;
     rtd.BindFlags = 0;
     rtd.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
     ID3D11Texture2D* staging_texture;
     device->CreateTexture2D(&rtd, NULL, &staging_texture);
-    device_context->CopyResource(staging_texture, rt.texture);
+    device_context->CopyResource(staging_texture, texture);
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
     device_context->Map(staging_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
     unsigned size = image::size(rt.pixel_format, rtd.Width, rtd.Height);
