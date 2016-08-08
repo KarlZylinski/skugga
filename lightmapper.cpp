@@ -53,10 +53,7 @@ void map(const World& world, Renderer* renderer)
     RenderTarget normals_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
     RenderTarget* vertex_data_rts[] = {&vertex_texture, &normals_texture};
     RenderTarget light_contrib_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
-    Camera vertex_data_camera;
-    camera::set_lightmap_rendering_mode(&vertex_data_camera);
-    Matrix4x4 view_matrix = camera::calc_view_matrix(vertex_data_camera);
-
+    
     Allocator ta = create_temp_allocator();
     Image vertex_image = {vertex_texture.width, vertex_texture.height, vertex_texture.pixel_format};
     image::init_data(&vertex_image, &ta);
@@ -80,7 +77,9 @@ void map(const World& world, Renderer* renderer)
         renderer->set_render_targets(vertex_data_rts, 2);
         renderer->set_shader(vertex_data_shader);
         renderer->pre_draw_frame();
-        renderer->draw(world.objects[i], view_matrix, vertex_data_camera.projection_matrix);
+        Camera vertex_data_camera;
+        camera::set_lightmap_rendering_mode(&vertex_data_camera);
+        renderer->draw(world.objects[i], camera::calc_view_matrix(vertex_data_camera), vertex_data_camera.projection_matrix);
         renderer->present();
 
         renderer->read_back_texture(&vertex_image, vertex_texture);
