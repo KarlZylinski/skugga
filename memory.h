@@ -59,5 +59,15 @@ void dealloc_all(Allocator* allocator);
 
 }
 
+namespace debug_allocator
+{
+
+void* alloc(Allocator* allocator, unsigned size);
+void dealloc(Allocator* allocator, void* ptr);
+void dealloc_all(Allocator* allocator);
+
+}
 
 #define create_temp_allocator() { temp_allocator::alloc, temp_allocator::dealloc, temp_allocator::dealloc_all }
+
+#define create_debug_allocator() { debug_allocator::alloc, debug_allocator::dealloc, debug_allocator::dealloc_all }

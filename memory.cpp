@@ -1,5 +1,6 @@
 #include "memory.h"
 #include "types.h"
+#include <stdlib.h>
 
 struct TempMemoryHeader
 {
@@ -157,3 +158,22 @@ void dealloc_all(Allocator* allocator)
 
 }
 
+namespace debug_allocator
+{
+
+void* alloc(Allocator* allocator, unsigned size)
+{
+    return malloc(size);
+}
+
+void dealloc(Allocator* allocator, void* ptr)
+{
+    free(ptr);
+}
+
+void dealloc_all(Allocator* allocator)
+{
+
+}
+
+}

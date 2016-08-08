@@ -480,18 +480,16 @@ void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights d
     pre_draw_frame();
     Matrix4x4 view_matrix = camera::calc_view_matrix(camera);
 
-    for (unsigned i = 0; i < world.num_objects; ++i)
+    for (unsigned i = 0; i < world.objects.num; ++i)
     {
-        if (world.objects[i].valid)
-            draw(world.objects[i], view_matrix, camera.projection_matrix);
+        draw(world.objects[i], view_matrix, camera.projection_matrix);
     }
 
     if (draw_lights == DrawLights::DrawLights)
     {
-        for (unsigned i = 0; i < world.num_lights; ++i)
+        for (unsigned i = 0; i < world.lights.num; ++i)
         {
-            if (world.lights[i].valid)
-                draw(world.lights[i], view_matrix, camera.projection_matrix);
+            draw(world.lights[i], view_matrix, camera.projection_matrix);
         }
     }
 

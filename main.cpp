@@ -11,6 +11,7 @@
 #include "mouse.h"
 #include "file.h"
 #include "lightmapper.h"
+#include "test_world.h"
 
 int main()
 {
@@ -21,10 +22,15 @@ int main()
     windows::window::init(&window);
     Renderer renderer = {};
     renderer.init(window.handle);
-    Simulation simulation = {};
-    simulation.init(&renderer, &window.state);
 
-    lightmapper::map(simulation.world, &renderer);
+    Allocator alloc = create_debug_allocator();
+    World w = {};
+    world::init(&w, &alloc);
+    test_world::create_world(&w, &renderer);
+    lightmapper::map(w, &renderer);
+
+    Simulation simulation = {};
+    simulation.init(&renderer, &window.state, &alloc);
 
     renderer.disable_scissor();
     renderer.set_render_target(&renderer.back_buffer);

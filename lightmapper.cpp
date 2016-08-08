@@ -67,11 +67,8 @@ void map(const World& world, Renderer* renderer)
     unsigned num_pixels = LightmapSize * LightmapSize;
     Patch* patches = (Patch*)ta.alloc(num_pixels * sizeof(Patch));
 
-    for (unsigned i = 0; i < world.num_objects; ++i)
+    for (unsigned i = 0; i < world.objects.num; ++i)
     {
-        if (!world.objects[i].valid)
-            continue;
-
         renderer->set_render_targets(vertex_data_rts, 2);
         renderer->set_shader(vertex_data_shader);
         renderer->pre_draw_frame();

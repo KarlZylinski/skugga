@@ -1,18 +1,16 @@
 #pragma once
 #include "object.h"
+#include "dynamic_array.h"
 
 struct World
 {
-    static const unsigned num_objects = 4096;
-    static const unsigned num_lights = 4096;
-    Object objects[num_objects];
-    Object lights[num_lights];
+    DynamicArray<Object> objects;
+    DynamicArray<Object> lights;
 };
 
 namespace world
 {
 
-void add_object(World* w, const Object& o);
-void add_light(World* w, const Object& o);
+void init(World* w, Allocator* allocator);
 
 }
