@@ -6,6 +6,7 @@
 
 #define memzero(ptr, type) memset(ptr, 0, sizeof(type))
 #define SmallNumber 0.0000001f
+#define IsValidRRHandle(rrh) rrh.h != InvalidHandle
 
 inline bool almost_equal(float f1, float f2)
 {

@@ -119,10 +119,8 @@ void Renderer::shutdown()
 {
     for (unsigned i = 0; i < num_resources; ++ i)
     {
-        const Geometry& g = geometries[i];
-
-        if (g.vertices != nullptr)
-            unload_geometry(i);
+        if (resources[i].type != RenderResourceType::Unused)
+            unload_resource({i});
     }
 
     depth_stencil_texture->Release();
@@ -224,24 +222,25 @@ void Renderer::set_constant_buffers(const ConstantBuffer& data)
     device_context->Unmap(constant_buffer, 0);
 }
 
-int Renderer::find_free_geometry_handle() const
+unsigned Renderer::find_free_resource_handle() const
 {
-    for (unsigned i = 0; i < num_resources; ++i)
+    for (unsigned i = 1; i < num_resources; ++i)
     {
-        if (geometries[i].vertices == nullptr)
+        if (resources[i].type == RenderResourceType::Unused)
         {
             return i;
         }
     }
-    return -1;
+
+    return InvalidHandle;
 }
 
-unsigned Renderer::load_geometry(Vertex* vertices, unsigned num_vertices, unsigned* indices, unsigned num_indices)
+RRHandle Renderer::load_geometry(Vertex* vertices, unsigned num_vertices, unsigned* indices, unsigned num_indices)
 {
-    unsigned handle = find_free_geometry_handle();
+    unsigned handle = find_free_resource_handle();
 
-    if (handle == -1)
-        return InvalidHandle;
+    if (handle == InvalidHandle)
+        return {InvalidHandle};
 
     ID3D11Buffer* vertex_buffer;
     {
@@ -271,23 +270,29 @@ unsigned Renderer::load_geometry(Vertex* vertices, unsigned num_vertices, unsign
     g.vertices = vertex_buffer;
     g.indices = index_buffer;
     g.num_indices = num_indices;
-    geometries[handle] = g;
-    return handle;
+
+    RenderResource r;
+    r.type = RenderResourceType::Geometry;
+    r.geometry = g;
+    resources[handle] = r;
+    return {handle};
 }
 
-void Renderer::unload_geometry(unsigned geometry_handle)
+void Renderer::unload_resource(RRHandle handle)
 {
-    if (geometry_handle < 0 || geometry_handle >= num_resources)
-        return;
+    RenderResource& res = get_resource(handle);
 
-    Geometry* geometry = &geometries[geometry_handle];
+    switch (res.type)
+    {
+        case RenderResourceType::Geometry:
+        {
+            res.geometry.vertices->Release();
+            res.geometry.indices->Release();
+        }
+        break;
+    }
 
-    if (geometry->vertices == nullptr)
-        return;
-
-    geometry->vertices->Release();
-    geometry->indices->Release();
-    memset(geometries + geometry_handle, 0, sizeof(Geometry));
+    memset(&res, 0, sizeof(RenderResource));
 }
 
 void Renderer::set_render_target(RenderTarget* rt)
@@ -309,7 +314,7 @@ void Renderer::set_render_targets(RenderTarget** rts, unsigned num)
 
 void Renderer::draw(const Object& object, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)
 {
-    auto geometry = geometries[object.geometry_handle];
+    auto geometry = get_resource(object.geometry_handle).geometry;
     ConstantBuffer constant_buffer_data = {};
     constant_buffer_data.model_view_projection = object.world_transform * view_matrix * projection_matrix;
     constant_buffer_data.model = object.world_transform;
@@ -318,10 +323,11 @@ void Renderer::draw(const Object& object, const Matrix4x4& view_matrix, const Ma
     device_context->VSSetConstantBuffers(0, 1, &constant_buffer);
     device_context->PSSetConstantBuffers(0, 1, &constant_buffer);
 
-    if (object.lightmap_resource_view != nullptr)
+    if (IsValidRRHandle(object.lightmap_handle))
     {
-        device_context->PSSetShaderResources(0, 1, &object.lightmap_resource_view);
+        device_context->PSSetShaderResources(0, 1, &get_resource(object.lightmap_handle).texture.view);
     }
+
     unsigned stride = sizeof(Vertex);
     unsigned offset = 0;
     device_context->IASetVertexBuffers(0, 1, &geometry.vertices, &stride, &offset);
@@ -435,12 +441,17 @@ void Renderer::disable_scissor()
     device_context->RSSetScissorRects(1, &rect);
 }
 
-LoadedTexture Renderer::load_texture(Allocator* allocator, wchar* filename)
+RRHandle Renderer::load_texture(Allocator* allocator, wchar* filename)
 {
+    unsigned handle = find_free_resource_handle();
+
+    if (handle == InvalidHandle)
+        return {InvalidHandle};
+
     LoadedFile loaded_texture = file::load(allocator, filename);
 
     if (!loaded_texture.valid)
-        return {false};
+        return {InvalidHandle};
 
     File texture_file = loaded_texture.file;
 
@@ -464,12 +475,23 @@ LoadedTexture Renderer::load_texture(Allocator* allocator, wchar* filename)
 
     ID3D11Texture2D* tex;
     if (device->CreateTexture2D(&desc, &init_data, &tex) != S_OK)
-        return {false};
+        return {InvalidHandle};
 
     ID3D11ShaderResourceView* resource_view;
 
     if (device->CreateShaderResourceView(tex, nullptr, &resource_view) != S_OK)
-        return {false};
+        return {InvalidHandle};
 
-    return {true, tex, resource_view};
+    RenderResource r;
+    r.type = RenderResourceType::Texture;
+    r.texture.resource = tex;
+    r.texture.view = resource_view;
+    resources[handle] = r;
+    return {handle};
+}
+
+RenderResource& Renderer::get_resource(RRHandle r)
+{
+    Assert(r.h > 0 && r.h < num_resources, "Resource handle out of bounds.");
+    return resources[r.h];
 }

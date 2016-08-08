@@ -2,7 +2,7 @@
 
 static unsigned find_free_object_handle(Object* objects, unsigned num_objects)
 {
-    for (unsigned i = 0; i < num_objects; ++i)
+    for (unsigned i = 1; i < num_objects; ++i)
     {
         if (!objects[i].valid)
         {

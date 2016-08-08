@@ -18,7 +18,7 @@ static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3
         scaled_vertices[i].color = color;
     }
 
-    unsigned box_geometry_handle = renderer->load_geometry(scaled_vertices, m.vertices.num, m.indices.data, m.indices.num);
+    RRHandle box_geometry_handle = renderer->load_geometry(scaled_vertices, m.vertices.num, m.indices.data, m.indices.num);
     Object obj = {0};
     obj.geometry_handle = box_geometry_handle;
     obj.world_transform = matrix4x4::identity();
@@ -28,12 +28,11 @@ static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3
     static wchar lightmap_filename[256];
     wsprintf(lightmap_filename, L"%d.data", id);
     Allocator ta = create_temp_allocator();
-    LoadedTexture lt = renderer->load_texture(&ta, lightmap_filename);
+    RRHandle lightmap_handle = renderer->load_texture(&ta, lightmap_filename);
 
-    if (lt.valid)
+    if (IsValidRRHandle(lightmap_handle))
     {
-        obj.lightmap = lt.texture.resource;
-        obj.lightmap_resource_view = lt.texture.view;
+        obj.lightmap_handle = lightmap_handle;
     }
 
     return obj;

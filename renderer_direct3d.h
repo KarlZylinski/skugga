@@ -38,10 +38,21 @@ struct Texture
     ID3D11ShaderResourceView* view;
 };
 
-struct LoadedTexture
+enum struct RenderResourceType
 {
-    bool valid ;
-    Texture texture;
+    Unused,
+    Geometry,
+    Texture
+};
+
+struct RenderResource
+{
+    RenderResourceType type;
+    union 
+    {
+        Geometry geometry;
+        Texture texture;
+    };
 };
 
 struct Shader
@@ -65,9 +76,9 @@ struct Renderer
     RenderTarget create_back_buffer();
     RenderTarget create_render_texture(PixelFormat pf);
     void set_constant_buffers(const ConstantBuffer& data);
-    int find_free_geometry_handle() const;
-    unsigned load_geometry(Vertex* vertices, unsigned num_vertices, unsigned* indices, unsigned num_indices);
-    void unload_geometry(unsigned geometry_handle);
+    unsigned find_free_resource_handle() const;
+    RRHandle load_geometry(Vertex* vertices, unsigned num_vertices, unsigned* indices, unsigned num_indices);
+    void unload_resource(RRHandle handle);
     void set_render_target(RenderTarget* rt);
     void set_render_targets(RenderTarget** rt, unsigned num);
     void draw(const Object& object, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix);
@@ -79,7 +90,8 @@ struct Renderer
     void set_scissor_rect(const Rect& r);
     void disable_scissor();
     void draw_frame(const World& world, const Camera& camera, DrawLights draw_lights);
-    LoadedTexture load_texture(Allocator* allocator, wchar* filename);
+    RRHandle load_texture(Allocator* allocator, wchar* filename);
+    RenderResource& get_resource(RRHandle r);
 
     static const unsigned num_resources = 4096;
     static const unsigned max_render_targets = 4;
@@ -91,6 +103,6 @@ struct Renderer
     ID3D11RasterizerState* raster_state;
     IDXGISwapChain* swap_chain;
     RenderTarget back_buffer;
-    Geometry geometries[num_resources];
+    RenderResource resources[num_resources];
     RenderTarget* render_targets[max_render_targets];
 };
