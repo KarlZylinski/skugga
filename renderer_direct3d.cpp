@@ -313,6 +313,10 @@ void Renderer::unload_resource(RRHandle handle)
             res.texture.resource->Release();
             break;
 
+        case RenderResourceType::MappedTexture:
+            res.texture.resource->Release();
+            break;
+
         case RenderResourceType::Shader:
             res.shader.input_layout->Release();
             res.shader.vertex_shader->Release();
@@ -406,6 +410,9 @@ void Renderer::present()
 
 MappedTexture Renderer::map_texture(const RenderTarget& rt)
 {
+    unsigned handle = find_free_resource_handle();
+    Assert(handle != InvalidHandle, "Out of handles.");
+
     D3D11_TEXTURE2D_DESC rtd = {};
     ID3D11Texture2D* texture = get_resource(rt.render_resource).render_target.texture;
     texture->GetDesc(&rtd);
@@ -417,16 +424,26 @@ MappedTexture Renderer::map_texture(const RenderTarget& rt)
     device_context->CopyResource(staging_texture, texture);
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
     device_context->Map(staging_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
+
+    Texture t = {};
+    t.resource = staging_texture;
+
+    RenderResource r = {};
+    r.type = RenderResourceType::MappedTexture;
+    r.texture = t;
+    resources[handle] = r;
+
     MappedTexture m = {};
     m.data = mapped_resource.pData;
-    m.texture = staging_texture;
+    m.texture = {handle};
     return m;
 }
 
 void Renderer::unmap_texture(const MappedTexture& m)
 {
-    device_context->Unmap(m.texture, 0);
-    m.texture->Release();
+    ID3D11Texture2D* tex = get_resource(m.texture).texture.resource;
+    device_context->Unmap(tex, 0);
+    unload_resource(m.texture);
 }
 
 void Renderer::pre_draw_frame()

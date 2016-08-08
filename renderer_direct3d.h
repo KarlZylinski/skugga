@@ -57,20 +57,21 @@ struct Texture
     ID3D11ShaderResourceView* view;
 };
 
+struct Shader
+{
+    ID3D11VertexShader* vertex_shader;
+    ID3D11PixelShader* pixel_shader;
+    ID3D11InputLayout* input_layout;
+};
+
 enum struct RenderResourceType
 {
     Unused,
     Geometry,
     Texture,
     Shader,
-    RenderTarget
-};
-
-struct Shader
-{
-    ID3D11VertexShader* vertex_shader;
-    ID3D11PixelShader* pixel_shader;
-    ID3D11InputLayout* input_layout;
+    RenderTarget,
+    MappedTexture
 };
 
 struct RenderResource
@@ -88,7 +89,7 @@ struct RenderResource
 struct MappedTexture
 {
     void* data;
-    ID3D11Texture2D* texture;
+    RRHandle texture;
 };
 
 struct Rect;
