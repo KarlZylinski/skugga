@@ -42,7 +42,15 @@ enum struct RenderResourceType
 {
     Unused,
     Geometry,
-    Texture
+    Texture,
+    Shader
+};
+
+struct Shader
+{
+    ID3D11VertexShader* vertex_shader;
+    ID3D11PixelShader* pixel_shader;
+    ID3D11InputLayout* input_layout;
 };
 
 struct RenderResource
@@ -52,14 +60,8 @@ struct RenderResource
     {
         Geometry geometry;
         Texture texture;
+        Shader shader;
     };
-};
-
-struct Shader
-{
-    ID3D11VertexShader* vertex_shader;
-    ID3D11PixelShader* pixel_shader;
-    ID3D11InputLayout* input_layout;
 };
 
 struct Rect;
@@ -70,9 +72,8 @@ struct Renderer
 {
     void init(HWND window_handle);
     void shutdown();
-    Shader load_shader(const wchar* filename);
-    void unload_shader(Shader* s);
-    void set_shader(Shader* s);
+    RRHandle load_shader(const wchar* filename);
+    void set_shader(RRHandle shader);
     RenderTarget create_back_buffer();
     RenderTarget create_render_texture(PixelFormat pf);
     void set_constant_buffers(const ConstantBuffer& data);

@@ -47,8 +47,8 @@ Color draw_hemicube_side(Renderer* renderer, const World& world, const Rect& sci
 
 void map(const World& world, Renderer* renderer)
 {
-    Shader vertex_data_shader = renderer->load_shader(L"uv_data.shader");
-    Shader light_contribution_shader = renderer->load_shader(L"light_contribution_calc.shader");
+    RRHandle vertex_data_shader = renderer->load_shader(L"uv_data.shader");
+    RRHandle light_contribution_shader = renderer->load_shader(L"light_contribution_calc.shader");
     RenderTarget vertex_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
     vertex_texture.clear = true;
     vertex_texture.clear_depth_stencil = true;
@@ -87,7 +87,7 @@ void map(const World& world, Renderer* renderer)
             continue;
 
         renderer->set_render_targets(vertex_data_rts, 2);
-        renderer->set_shader(&vertex_data_shader);
+        renderer->set_shader(vertex_data_shader);
         renderer->pre_draw_frame();
         renderer->draw(world.objects[i], view_matrix, vertex_data_camera.projection_matrix);
         renderer->present();
@@ -135,7 +135,7 @@ void map(const World& world, Renderer* renderer)
         }
 
         memset(lightmap.data, 0, lightmap_size);
-        renderer->set_shader(&light_contribution_shader);
+        renderer->set_shader(light_contribution_shader);
         renderer->set_render_target(&light_contrib_texture);
 
         for (unsigned patch_index = 0; patch_index < num_patches; ++patch_index)

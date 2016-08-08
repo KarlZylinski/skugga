@@ -129,8 +129,13 @@ void Renderer::shutdown()
     device_context->Release();
 }
 
-Shader Renderer::load_shader(const wchar* filename)
+RRHandle Renderer::load_shader(const wchar* filename)
 {
+    unsigned handle = find_free_resource_handle();
+
+    if (handle == InvalidHandle)
+        return {InvalidHandle};
+
     ID3DBlob* vs_blob;
     ID3DBlob* ps_blob;
     D3DCompileFromFile(filename, 0, 0, "VShader", "vs_4_0", 0, 0, &vs_blob, 0);
@@ -148,21 +153,19 @@ Shader Renderer::load_shader(const wchar* filename)
     device->CreateInputLayout(ied, 5, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &s.input_layout);
     vs_blob->Release();
     ps_blob->Release();
-    return s;
+    RenderResource r;
+    r.type = RenderResourceType::Shader;
+    r.shader = s;
+    resources[handle] = r;
+    return {handle};
 }
 
-void Renderer::unload_shader(Shader* s)
+void Renderer::set_shader(RRHandle shader)
 {
-    s->input_layout->Release();
-    s->vertex_shader->Release();
-    s->pixel_shader->Release();
-}
-
-void Renderer::set_shader(Shader* s)
-{
-    device_context->VSSetShader(s->vertex_shader, 0, 0);
-    device_context->PSSetShader(s->pixel_shader, 0, 0);
-    device_context->IASetInputLayout(s->input_layout);
+    Shader& s = get_resource(shader).shader;
+    device_context->VSSetShader(s.vertex_shader, 0, 0);
+    device_context->PSSetShader(s.pixel_shader, 0, 0);
+    device_context->IASetInputLayout(s.input_layout);
 }
 
 RenderTarget Renderer::create_back_buffer()
@@ -285,11 +288,27 @@ void Renderer::unload_resource(RRHandle handle)
     switch (res.type)
     {
         case RenderResourceType::Geometry:
-        {
             res.geometry.vertices->Release();
             res.geometry.indices->Release();
-        }
-        break;
+            break;
+
+        case RenderResourceType::Texture:
+            res.texture.view->Release();
+            res.texture.resource->Release();
+            break;
+
+        case RenderResourceType::Shader:
+            res.shader.input_layout->Release();
+            res.shader.vertex_shader->Release();
+            res.shader.pixel_shader->Release();
+            break;
+
+        default:
+            if (res.type != RenderResourceType::Unused)
+            {
+                Error("Missing resource unloader.");
+            }
+            break;
     }
 
     memset(&res, 0, sizeof(RenderResource));
