@@ -30,9 +30,9 @@ Color draw_hemicube_side(Renderer* renderer, const World& world, const Rect& sci
 {
     renderer->set_scissor_rect(scissor_rect);
     renderer->draw_frame(world, camera, DrawLights::DrawLights);
-    renderer->read_back_texture(light_contrib_image, light_contrib_texture);
+    MappedTexture m = renderer->map_texture(light_contrib_texture);
 
-    Color* contrib_pixels = (Color*)light_contrib_image->data;
+    Color* contrib_pixels = (Color*)m.data;
     Color total_light = {};
     unsigned num_pixels = light_contrib_texture.width * light_contrib_texture.height;
     for (unsigned contrib_index = 0; contrib_index < num_pixels; ++contrib_index)
@@ -42,6 +42,7 @@ Color draw_hemicube_side(Renderer* renderer, const World& world, const Rect& sci
         total_light.g += cp.g;
         total_light.b += cp.b;
     }
+    renderer->unmap_texture(m);
     return total_light;
 }
 
@@ -55,10 +56,6 @@ void map(const World& world, Renderer* renderer)
     RenderTarget light_contrib_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
     
     Allocator ta = create_temp_allocator();
-    Image vertex_image = {vertex_texture.width, vertex_texture.height, vertex_texture.pixel_format};
-    image::init_data(&vertex_image, &ta);
-    Image normals_image = {normals_texture.width, normals_texture.height, normals_texture.pixel_format};
-    image::init_data(&normals_image, &ta);
     Image light_contrib_image = {light_contrib_texture.width, light_contrib_texture.height, light_contrib_texture.pixel_format};
     image::init_data(&light_contrib_image, &ta);
 
@@ -66,7 +63,7 @@ void map(const World& world, Renderer* renderer)
     image::init_data(&lightmap, &ta);
     unsigned lightmap_size = image::size(lightmap);
 
-    unsigned num_pixels = vertex_image.width * vertex_image.height;
+    unsigned num_pixels = light_contrib_texture.width * light_contrib_texture.height;
     Patch* patches = (Patch*)ta.alloc(num_pixels * sizeof(Patch));
 
     for (unsigned i = 0; i < world.num_objects; ++i)
@@ -82,9 +79,9 @@ void map(const World& world, Renderer* renderer)
         renderer->draw(world.objects[i], camera::calc_view_matrix(vertex_data_camera), vertex_data_camera.projection_matrix);
         renderer->present();
 
-        renderer->read_back_texture(&vertex_image, vertex_texture);
+        MappedTexture vertex_image = renderer->map_texture(vertex_texture);
         Vector4* positions = (Vector4*)vertex_image.data;
-        renderer->read_back_texture(&normals_image, normals_texture);
+        MappedTexture normals_image = renderer->map_texture(normals_texture);
         Vector4* normals = (Vector4*)normals_image.data;
 
         unsigned num_patches = 0;
@@ -123,6 +120,9 @@ void map(const World& world, Renderer* renderer)
 
             p.pixel_index = pixel_index;
         }
+
+        renderer->unmap_texture(vertex_image);
+        renderer->unmap_texture(normals_image);
 
         memset(lightmap.data, 0, lightmap_size);
         renderer->set_shader(light_contribution_shader);

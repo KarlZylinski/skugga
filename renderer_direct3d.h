@@ -71,6 +71,12 @@ struct RenderResource
     };
 };
 
+struct MappedTexture
+{
+    void* data;
+    ID3D11Texture2D* texture;
+};
+
 struct Rect;
 
 enum struct DrawLights { DrawLights, DoNotDrawLights };
@@ -93,7 +99,8 @@ struct Renderer
     void clear_depth_stencil();
     void clear_render_target(RenderTarget* sc, const Color& color);
     void present();
-    void read_back_texture(Image* out, const RenderTarget& rt);
+    MappedTexture map_texture(const RenderTarget& rt);
+    void unmap_texture(const MappedTexture& m);
     void pre_draw_frame();
     void set_scissor_rect(const Rect& r);
     void disable_scissor();

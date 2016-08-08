@@ -403,7 +403,7 @@ void Renderer::present()
     swap_chain->Present(0, 0);
 }
 
-void Renderer::read_back_texture(Image* out, const RenderTarget& rt)
+MappedTexture Renderer::map_texture(const RenderTarget& rt)
 {
     D3D11_TEXTURE2D_DESC rtd = {};
     ID3D11Texture2D* texture = get_resource(rt.render_resource).render_target.texture;
@@ -416,10 +416,16 @@ void Renderer::read_back_texture(Image* out, const RenderTarget& rt)
     device_context->CopyResource(staging_texture, texture);
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
     device_context->Map(staging_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
-    unsigned size = image::size(rt.pixel_format, rtd.Width, rtd.Height);
-    memcpy(out->data, mapped_resource.pData, size);
-    device_context->Unmap(staging_texture, 0);
-    staging_texture->Release();
+    MappedTexture m = {};
+    m.data = mapped_resource.pData;
+    m.texture = staging_texture;
+    return m;
+}
+
+void Renderer::unmap_texture(const MappedTexture& m)
+{
+    device_context->Unmap(m.texture, 0);
+    m.texture->Release();
 }
 
 void Renderer::pre_draw_frame()
