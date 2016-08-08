@@ -24,7 +24,7 @@ int main()
     Simulation simulation = {};
     simulation.init(&renderer, &window.state);
 
-    lightmapper::map(simulation.world, &renderer);
+    //lightmapper::map(simulation.world, &renderer);
 
     renderer.disable_scissor();
     renderer.set_render_target(&renderer.back_buffer);

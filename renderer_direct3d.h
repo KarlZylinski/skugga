@@ -1,11 +1,25 @@
 #pragma once
 
-#include <d3d11.h>
 #include "image.h"
 #include "renderer.h"
 #include "world.h"
 #include "camera.h"
 #include "memory.h"
+
+struct ID3D11Buffer;
+struct ID3D11Texture2D;
+struct ID3D11ShaderResourceView;
+struct ID3D11RenderTargetView;
+struct ID3D11VertexShader;
+struct ID3D11PixelShader;
+struct ID3D11InputLayout;
+struct ID3D11Device;
+struct ID3D11DeviceContext;
+struct ID3D11Buffer;
+struct ID3D11Texture2D;
+struct ID3D11DepthStencilView;
+struct ID3D11RasterizerState;
+struct IDXGISwapChain;
 
 struct ConstantBuffer
 {
@@ -83,12 +97,12 @@ enum struct DrawLights { DrawLights, DoNotDrawLights };
 
 struct Renderer
 {
-    void init(HWND window_handle);
+    void init(void* window_handle);
     void shutdown();
     RRHandle load_shader(const wchar* filename);
     void set_shader(RRHandle shader);
     RenderTarget create_back_buffer();
-    RenderTarget create_render_texture(PixelFormat pf);
+    RenderTarget create_render_texture(PixelFormat pf, unsigned width, unsigned height);
     void set_constant_buffers(const ConstantBuffer& data);
     unsigned find_free_resource_handle() const;
     RRHandle load_geometry(Vertex* vertices, unsigned num_vertices, unsigned* indices, unsigned num_indices);

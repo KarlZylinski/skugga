@@ -1,5 +1,6 @@
-#include "renderer_direct3d.h"
+#include <d3d11.h>
 #include <D3Dcompiler.h>
+#include "renderer_direct3d.h"
 #include "world.h"
 #include "config.h"
 #include "rect.h"
@@ -33,7 +34,7 @@ namespace
     }
 }
 
-void Renderer::init(HWND window_handle)
+void Renderer::init(void* window_handle)
 {
     DXGI_SWAP_CHAIN_DESC scd = {};
     scd.BufferCount = 1;
@@ -41,7 +42,7 @@ void Renderer::init(HWND window_handle)
     scd.BufferDesc.Height = WindowHeight;
     scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    scd.OutputWindow = window_handle;
+    scd.OutputWindow = (HWND)window_handle;
     scd.SampleDesc.Count = 1;
     scd.Windowed = true;
 
@@ -60,14 +61,6 @@ void Renderer::init(HWND window_handle)
         &device_context
     ));
 
-    D3D11_VIEWPORT viewport = {};
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    viewport.Width = WindowWidth;
-    viewport.Height = WindowHeight;
-    viewport.MinDepth = 0;
-    viewport.MaxDepth = 1;
-    device_context->RSSetViewports(1, &viewport);
     D3D11_BUFFER_DESC cbd = {0};
     cbd.ByteWidth = sizeof(ConstantBuffer);
     cbd.Usage = D3D11_USAGE_DYNAMIC;
@@ -198,16 +191,14 @@ RenderTarget Renderer::create_back_buffer()
     return rt;
 }
 
-RenderTarget Renderer::create_render_texture(PixelFormat pf)
+RenderTarget Renderer::create_render_texture(PixelFormat pf, unsigned width, unsigned height)
 {
     unsigned handle = find_free_resource_handle();
     Assert(handle != InvalidHandle, "Couldn't create render texture.");
 
-    DXGI_SWAP_CHAIN_DESC scd = {};
-    swap_chain->GetDesc(&scd);
     D3D11_TEXTURE2D_DESC rtd = {};
-    rtd.Width = scd.BufferDesc.Width;
-    rtd.Height = scd.BufferDesc.Height;
+    rtd.Width = width;
+    rtd.Height = height;
     rtd.MipLevels = 1;
     rtd.ArraySize = 1;
     rtd.Format = pixel_format_to_dxgi_format(pf);
@@ -234,8 +225,8 @@ RenderTarget Renderer::create_render_texture(PixelFormat pf)
     RenderTarget rt = {};
     rt.render_resource = {handle};
     rt.pixel_format = pf;
-    rt.width = rtd.Width;
-    rt.height = rtd.Height;
+    rt.width = width;
+    rt.height = height;
     rt.clear = true;
     rt.clear_depth_stencil = true;
     rt.clear_color = {0, 0, 0, 1};
@@ -354,6 +345,7 @@ void Renderer::set_render_target(RenderTarget* rt)
 
 void Renderer::set_render_targets(RenderTarget** rts, unsigned num)
 {
+    Assert(num > 0, "Trying to set 0 render targets.");
     ID3D11RenderTargetView* targets[4];
     for (unsigned i = 0; i < num; ++i)
     {
@@ -362,6 +354,15 @@ void Renderer::set_render_targets(RenderTarget** rts, unsigned num)
     device_context->OMSetRenderTargets(num, targets, depth_stencil_view);
     memset(render_targets, 0, sizeof(render_targets));
     memcpy(render_targets, rts, sizeof(RenderTarget**) * num);
+
+    D3D11_VIEWPORT viewport = {};
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.Width = (float)rts[0]->width;
+    viewport.Height = (float)rts[0]->height;
+    viewport.MinDepth = 0;
+    viewport.MaxDepth = 1;
+    device_context->RSSetViewports(1, &viewport);
 }
 
 void Renderer::draw(const Object& object, const Matrix4x4& view_matrix, const Matrix4x4& projection_matrix)
@@ -515,8 +516,8 @@ RRHandle Renderer::load_texture(Allocator* allocator, wchar* filename)
     File texture_file = loaded_texture.file;
 
     D3D11_TEXTURE2D_DESC desc;
-    desc.Width = 200;
-    desc.Height = 200;
+    desc.Width = 64;
+    desc.Height = 64;
     desc.MipLevels = 1;
     desc.ArraySize = 1;
     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -529,7 +530,7 @@ RRHandle Renderer::load_texture(Allocator* allocator, wchar* filename)
 
     D3D11_SUBRESOURCE_DATA init_data;
     init_data.pSysMem = texture_file.data;
-    init_data.SysMemPitch = 200 * image::pixel_size(PixelFormat::R8G8B8A8_UINT_NORM);
+    init_data.SysMemPitch = 64 * image::pixel_size(PixelFormat::R8G8B8A8_UINT_NORM);
     init_data.SysMemSlicePitch = texture_file.size;
 
     ID3D11Texture2D* tex;

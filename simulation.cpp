@@ -1,3 +1,4 @@
+#include <Windows.h>
 #include "simulation.h"
 #include "window_state.h"
 #include "mesh.h"

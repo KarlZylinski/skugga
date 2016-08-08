@@ -3,7 +3,6 @@
 #include "file.h"
 #include "windows_window.h"
 #include "rect.h"
-#include "config.h"
 #include "keyboard.h"
 
 namespace lightmapper
@@ -19,11 +18,13 @@ struct Patch
     unsigned pixel_index;
 };
 
-static const Rect scissor_full = {0, 0, WindowWidth, WindowHeight};
-static const Rect scissor_top = {0, 0, WindowWidth, WindowHeight/2};
-static const Rect scissor_bottom = {0, WindowHeight/2, WindowWidth, WindowHeight};
-static const Rect scissor_left = {0, 0, WindowWidth/2, WindowHeight};
-static const Rect scissor_right = {WindowWidth/2, 0, WindowWidth, WindowHeight};
+static const unsigned LightmapSize = 64;
+
+static const Rect scissor_full = {0, 0, LightmapSize, LightmapSize};
+static const Rect scissor_top = {0, 0, LightmapSize, LightmapSize/2};
+static const Rect scissor_bottom = {0, LightmapSize/2, LightmapSize, LightmapSize};
+static const Rect scissor_left = {0, 0, LightmapSize/2, LightmapSize};
+static const Rect scissor_right = {LightmapSize/2, 0, LightmapSize, LightmapSize};
 
 Color draw_hemicube_side(Renderer* renderer, const World& world, const Rect& scissor_rect,
     const Camera& camera, const RenderTarget& light_contrib_texture, Image* light_contrib_image)
@@ -50,20 +51,20 @@ void map(const World& world, Renderer* renderer)
 {
     RRHandle vertex_data_shader = renderer->load_shader(L"uv_data.shader");
     RRHandle light_contribution_shader = renderer->load_shader(L"light_contribution_calc.shader");
-    RenderTarget vertex_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
-    RenderTarget normals_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
+    RenderTarget vertex_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT, LightmapSize, LightmapSize);
+    RenderTarget normals_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT, LightmapSize, LightmapSize);
     RenderTarget* vertex_data_rts[] = {&vertex_texture, &normals_texture};
-    RenderTarget light_contrib_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT);
+    RenderTarget light_contrib_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT, LightmapSize, LightmapSize);
     
     Allocator ta = create_temp_allocator();
-    Image light_contrib_image = {light_contrib_texture.width, light_contrib_texture.height, light_contrib_texture.pixel_format};
+    Image light_contrib_image = {LightmapSize, LightmapSize, light_contrib_texture.pixel_format};
     image::init_data(&light_contrib_image, &ta);
 
-    Image lightmap = {light_contrib_texture.width, light_contrib_texture.height, PixelFormat::R8G8B8A8_UINT_NORM};
+    Image lightmap = {LightmapSize, LightmapSize, PixelFormat::R8G8B8A8_UINT_NORM};
     image::init_data(&lightmap, &ta);
     unsigned lightmap_size = image::size(lightmap);
 
-    unsigned num_pixels = light_contrib_texture.width * light_contrib_texture.height;
+    unsigned num_pixels = LightmapSize * LightmapSize;
     Patch* patches = (Patch*)ta.alloc(num_pixels * sizeof(Patch));
 
     for (unsigned i = 0; i < world.num_objects; ++i)
