@@ -60,7 +60,6 @@ int main()
 
     //simulation.camera.rotation = quaternion::normalize(quaternion::from_axis_angle({0,1,0}, -PI/2) * quaternion::look_at({0,0,0},{-1,0,0}));
     //quaternion::look_at(vector3::zero, vector3::lookdir);
-
     renderer.disable_scissor();
     renderer.set_render_target(&renderer.back_buffer);
     RRHandle default_shader = renderer.load_shader(L"shader.shader");

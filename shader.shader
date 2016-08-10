@@ -12,10 +12,9 @@ struct VOut
     float3 normal : NORMAL;
     float2 uv : TEXCOORD;
     float4 color : COLOR;
-    float light_emittance : LIGHT_EMITTANCE;
 };
 
-VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR, float light_emittance : LIGHT_EMITTANCE)
+VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR)
 {
     VOut output;
 
@@ -24,7 +23,6 @@ VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEX
     output.normal = normal;
     output.uv = uv;
     output.color = color;
-    output.light_emittance = light_emittance;
 
     return output;
 }
@@ -32,7 +30,7 @@ VOut VShader(float4 position : POSITION, float3 normal : NORMAL, float2 uv : TEX
 Texture2D lightmap;
 SamplerState lightmap_ss;
 
-float4 PShader(float4 position : SV_POSITION, float4 vertex_pos : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR, float light_emittance : LIGHT_EMITTANCE) : SV_TARGET
+float4 PShader(float4 position : SV_POSITION, float4 vertex_pos : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD, float4 color : COLOR) : SV_TARGET
 {
     return lightmap.Sample(lightmap_ss, uv);
 }

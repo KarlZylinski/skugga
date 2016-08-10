@@ -5,7 +5,6 @@
 struct World
 {
     DynamicArray<Object> objects;
-    DynamicArray<Object> lights;
 };
 
 namespace world

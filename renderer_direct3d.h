@@ -120,7 +120,7 @@ struct Renderer
     void set_scissor_rect(const Rect& r);
     void disable_scissor();
     void draw_frame(const World& world, const Camera& camera, DrawLights draw_lights);
-    RRHandle load_texture(Allocator* allocator, wchar* filename);
+    RRHandle load_texture(void* data, PixelFormat pf, unsigned width, unsigned height);
     RenderResource& get_resource(RRHandle r);
 
     static const unsigned num_resources = 4096;

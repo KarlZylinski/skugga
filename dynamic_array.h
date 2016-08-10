@@ -21,6 +21,14 @@ struct DynamicArray
         capacity = new_capacity;
     }
 
+    void insert(const T&v, unsigned i)
+    {
+        while (data == nullptr || num == capacity || i + 1 > capacity)
+            grow();
+
+        *(data + i) = v;
+    }
+
     void add(const T& v)
     {
         if (data == nullptr || num == capacity)
@@ -68,6 +76,11 @@ struct DynamicArray
         T* p = (T*)(alloc == nullptr ? allocator : alloc)->alloc(num * sizeof(T));
         memcpy(p, data, num * sizeof(T));
         return p;
+    }
+
+    T& last()
+    {
+        return data[num - 1];
     }
 
     T& operator[](unsigned i)

@@ -4,8 +4,10 @@ struct Allocator;
 
 enum struct PixelFormat
 {
+    R8G8B8A8_UINT,
     R8G8B8A8_UINT_NORM,
-    R32G32B32A32_FLOAT
+    R32G32B32A32_FLOAT,
+    R32_UINT
 };
 
 struct Image

@@ -5,11 +5,12 @@
 #include "renderer_direct3d.h"
 #include "mesh.h"
 #include "obj.h"
+#include "file.h"
 
-namespace test_world
+namespace
 {
 
-Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color, unsigned id)
+Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color, unsigned id, bool is_light)
 {
     Vertex* scaled_vertices = m.vertices.clone_raw();
     memcpy(scaled_vertices, m.vertices.data, m.vertices.num * sizeof(Vertex));
@@ -25,20 +26,32 @@ Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale
     obj.geometry_handle = box_geometry_handle;
     obj.world_transform = matrix4x4::identity();
     obj.id = id;
+    obj.is_light = is_light;
     memcpy(&obj.world_transform.w.x, &pos.x, sizeof(Vector3));
 
-    static wchar lightmap_filename[256];
-    wsprintf(lightmap_filename, L"%d.data", id);
-    Allocator ta = create_temp_allocator();
-    RRHandle lightmap_handle = renderer->load_texture(&ta, lightmap_filename);
-
-    if (IsValidRRHandle(lightmap_handle))
     {
-        obj.lightmap_handle = lightmap_handle;
+        static wchar lightmap_filename[256];
+        wsprintf(lightmap_filename, L"%d.data", id);
+        Allocator ta = create_temp_allocator();
+        LoadedFile f = file::load(&ta, lightmap_filename);
+
+        if (f.valid)
+        {
+            RRHandle lightmap_handle = renderer->load_texture(f.file.data, PixelFormat::R8G8B8A8_UINT_NORM, 64, 64);
+        
+            if (IsValidRRHandle(lightmap_handle))
+                obj.lightmap_handle = lightmap_handle;
+        }
     }
 
     return obj;
 }
+
+}
+
+namespace test_world
+{
+
 
 void create_world(World* world, Renderer* renderer)
 {
@@ -54,13 +67,13 @@ void create_world(World* world, Renderer* renderer)
     float floor_to_cieling = 2;
     float pillar_width = 0.4f;
 
-    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random(), 4));
-    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random(), 12));
-    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random(), 123));
-    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random(), 145));
-    //world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling - 15, 0}, color::random(), 12333));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random(), 4, false));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random(), 12, false));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random(), 123, false));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random(), 145, false));
+    //world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling - 15, 0}, color::random(), 12333))
 
-    //world->objects.add(create_scaled_box(renderer, lm.mesh, {2,2,2}, {10, -20, 0}, color::random(), 145));
+    //world->objects.add(create_scaled_box(renderer, lm.mesh, {2,2,2}, {0, 0, 0}, color::random(), 145, false));
 
     //world->objects.add(create_scaled_box(renderer, lm.mesh, {1,1,1}, vector3::lookdir * 5, color::random(), 145));
 
@@ -68,12 +81,7 @@ void create_world(World* world, Renderer* renderer)
 
     if (lm.valid)
     {
-        for (unsigned i = 0; i < lm.mesh.vertices.num; ++i)
-        {
-            lm.mesh.vertices[i].light_emittance = 1.0f;
-        }
-
-        world->lights.add(create_scaled_box(renderer, lm.mesh, {10, 10, 10}, {20, 25, -19}, {1,1,1,1}, 10000));
+        world->objects.add(create_scaled_box(renderer, lm.mesh, {10, 10, 10}, {-20, 25, -19}, {1,1,1,1}, 10000, true));
     }
 }
 

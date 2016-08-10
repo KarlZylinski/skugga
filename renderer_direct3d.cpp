@@ -12,11 +12,16 @@ namespace
     {
         switch(pf)
         {
+        case PixelFormat::R8G8B8A8_UINT:
+            return DXGI_FORMAT_R8G8B8A8_UINT;
         case PixelFormat::R8G8B8A8_UINT_NORM:
             return DXGI_FORMAT_R8G8B8A8_UNORM;
         case PixelFormat::R32G32B32A32_FLOAT:
             return DXGI_FORMAT_R32G32B32A32_FLOAT;
+        case PixelFormat::R32_UINT:
+            return DXGI_FORMAT_R32_UINT;
         default:
+            Error("Pixel format conversion in dxgi missing.");
             return DXGI_FORMAT_UNKNOWN;
         }
     }
@@ -122,6 +127,19 @@ void Renderer::shutdown()
     device_context->Release();
 }
 
+namespace
+{
+    void check_shader_error(ID3DBlob* error_blob)
+    {
+        if (error_blob)
+        {
+            Error((char*)error_blob->GetBufferPointer());
+        }
+        else
+            Error("Unknown shader errror.");
+    }
+}
+
 RRHandle Renderer::load_shader(const wchar* filename)
 {
     unsigned handle = find_free_resource_handle();
@@ -129,10 +147,16 @@ RRHandle Renderer::load_shader(const wchar* filename)
     if (handle == InvalidHandle)
         return {InvalidHandle};
 
-    ID3DBlob* vs_blob;
-    ID3DBlob* ps_blob;
-    D3DCompileFromFile(filename, 0, 0, "VShader", "vs_4_0", 0, 0, &vs_blob, 0);
-    D3DCompileFromFile(filename, 0, 0, "PShader", "ps_4_0", 0, 0, &ps_blob, 0);
+    ID3DBlob* vs_blob = nullptr;
+    ID3DBlob* ps_blob = nullptr;
+    ID3DBlob* error_blob = nullptr;
+    HRESULT result;
+    result = D3DCompileFromFile(filename, 0, 0, "VShader", "vs_4_0", 0, 0, &vs_blob, &error_blob);
+    if (FAILED(result))
+        check_shader_error(error_blob);
+    result = D3DCompileFromFile(filename, 0, 0, "PShader", "ps_4_0", 0, 0, &ps_blob, &error_blob);
+    if (FAILED(result))
+        check_shader_error(error_blob);
     Shader s = {};
     device->CreateVertexShader(vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), nullptr, &s.vertex_shader);
     device->CreatePixelShader(ps_blob->GetBufferPointer(), ps_blob->GetBufferSize(), nullptr, &s.pixel_shader);
@@ -140,10 +164,9 @@ RRHandle Renderer::load_shader(const wchar* filename)
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"LIGHT_EMITTANCE", 0, DXGI_FORMAT_R32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0}
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
-    device->CreateInputLayout(ied, 5, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &s.input_layout);
+    device->CreateInputLayout(ied, 4, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &s.input_layout);
     vs_blob->Release();
     ps_blob->Release();
     RenderResource r;
@@ -380,7 +403,11 @@ void Renderer::draw(const Object& object, const Matrix4x4& view_matrix, const Ma
     device_context->VSSetConstantBuffers(0, 1, &constant_buffer);
     device_context->PSSetConstantBuffers(0, 1, &constant_buffer);
 
-    if (IsValidRRHandle(object.lightmap_handle))
+    if (IsValidRRHandle(object.lightmap_patch_offset))
+    {
+        device_context->PSSetShaderResources(0, 1, &get_resource(object.lightmap_patch_offset).texture.view);
+    }
+    else if (IsValidRRHandle(object.lightmap_handle))
     {
         device_context->PSSetShaderResources(0, 1, &get_resource(object.lightmap_handle).texture.view);
     }
@@ -485,14 +512,6 @@ void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights d
         draw(world.objects[i], view_matrix, camera.projection_matrix);
     }
 
-    if (draw_lights == DrawLights::DrawLights)
-    {
-        for (unsigned i = 0; i < world.lights.num; ++i)
-        {
-            draw(world.lights[i], view_matrix, camera.projection_matrix);
-        }
-    }
-
     present();
 }
 
@@ -516,26 +535,19 @@ void Renderer::disable_scissor()
     device_context->RSSetScissorRects(1, &rect);
 }
 
-RRHandle Renderer::load_texture(Allocator* allocator, wchar* filename)
+RRHandle Renderer::load_texture(void* data, PixelFormat pf, unsigned width, unsigned height)
 {
     unsigned handle = find_free_resource_handle();
 
     if (handle == InvalidHandle)
         return {InvalidHandle};
 
-    LoadedFile loaded_texture = file::load(allocator, filename);
-
-    if (!loaded_texture.valid)
-        return {InvalidHandle};
-
-    File texture_file = loaded_texture.file;
-
     D3D11_TEXTURE2D_DESC desc;
-    desc.Width = 64;
-    desc.Height = 64;
+    desc.Width = width;
+    desc.Height = height;
     desc.MipLevels = 1;
     desc.ArraySize = 1;
-    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.Format = pixel_format_to_dxgi_format(pf);
     desc.SampleDesc.Count = 1;
     desc.SampleDesc.Quality = 0;
     desc.Usage = D3D11_USAGE_DEFAULT;
@@ -544,9 +556,9 @@ RRHandle Renderer::load_texture(Allocator* allocator, wchar* filename)
     desc.MiscFlags = 0;
 
     D3D11_SUBRESOURCE_DATA init_data;
-    init_data.pSysMem = texture_file.data;
-    init_data.SysMemPitch = 64 * image::pixel_size(PixelFormat::R8G8B8A8_UINT_NORM);
-    init_data.SysMemSlicePitch = texture_file.size;
+    init_data.pSysMem = data;
+    init_data.SysMemPitch = width * image::pixel_size(pf);
+    init_data.SysMemSlicePitch = image::size(pf, width, height);
 
     ID3D11Texture2D* tex;
     if (device->CreateTexture2D(&desc, &init_data, &tex) != S_OK)

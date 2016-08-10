@@ -8,5 +8,4 @@ struct Vertex
     Vector3 normal;
     Vector2 uv;
     Color color;
-    float light_emittance;
 };

@@ -2,10 +2,11 @@
 
 struct World;
 struct Renderer;
+struct Allocator;
 
 namespace lightmapper
 {
 
-void map(const World& world, Renderer* renderer);
+void map(World& world, Renderer* renderer);
 
 }

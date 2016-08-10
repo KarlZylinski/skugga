@@ -157,8 +157,14 @@ static int get_existing_vertex(const DynamicArray<Vertex>& vertices, const Verte
     return -1;
 }
 
-static void add_vertex_to_mesh(Mesh* m, const Vertex& v)
+static void add_vertex_to_mesh(Mesh* m, const Vector3& pos, const Vector3& normal, const Vector2& uv, const Color& c)
 {
+    Vertex v = {};
+    v.position = pos;
+    v.normal = normal;
+    v.uv = uv;
+    v.color = c;
+    
     int i = get_existing_vertex(m->vertices, v);
 
     if (i != -1)
@@ -189,9 +195,9 @@ LoadedMesh load(Allocator* alloc, const wchar* filename)
     for (unsigned i = 0; i < pd.faces.num; ++i)
     {
         const ParsedFace& f = pd.faces[i];
-        add_vertex_to_mesh(&m, {pd.vertices[f.v1], pd.normals[f.n1], pd.uvs[f.u1], {1.0f, 0.0f, 1.0f, 1.0f}, 0});
-        add_vertex_to_mesh(&m, {pd.vertices[f.v2], pd.normals[f.n2], pd.uvs[f.u2], {1.0f, 0.0f, 1.0f, 1.0f}, 0});
-        add_vertex_to_mesh(&m, {pd.vertices[f.v3], pd.normals[f.n3], pd.uvs[f.u3], {1.0f, 0.0f, 1.0f, 1.0f}, 0});
+        add_vertex_to_mesh(&m, pd.vertices[f.v1], pd.normals[f.n1], pd.uvs[f.u1], {1.0f, 0.0f, 1.0f, 1.0f});
+        add_vertex_to_mesh(&m, pd.vertices[f.v2], pd.normals[f.n2], pd.uvs[f.u2], {1.0f, 0.0f, 1.0f, 1.0f});
+        add_vertex_to_mesh(&m, pd.vertices[f.v3], pd.normals[f.n3], pd.uvs[f.u3], {1.0f, 0.0f, 1.0f, 1.0f});
     }
 
     return {true, m};
