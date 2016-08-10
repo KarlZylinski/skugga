@@ -16,8 +16,10 @@ struct Patch
     Camera up;
     Camera down;
     unsigned uv_index;
-    float emission;
-    float incident;
+    ColorRGB emission;
+    ColorRGB excident;
+    ColorRGB incident;
+    float reflectance;
 };
 
 static const unsigned LightmapSize = 64;
@@ -28,7 +30,7 @@ static const Rect scissor_bottom = {0, LightmapSize/2, LightmapSize, LightmapSiz
 static const Rect scissor_left = {0, 0, LightmapSize/2, LightmapSize};
 static const Rect scissor_right = {LightmapSize/2, 0, LightmapSize, LightmapSize};
 
-Color draw_hemicube_side(Renderer* renderer, const World& world, const Rect& scissor_rect,
+ColorRGB draw_hemicube_side(Renderer* renderer, const World& world, const Rect& scissor_rect,
     const Camera& camera, const RenderTarget& light_contrib_texture, Patch* patches)
 {
     renderer->set_scissor_rect(scissor_rect);
@@ -36,15 +38,13 @@ Color draw_hemicube_side(Renderer* renderer, const World& world, const Rect& sci
     MappedTexture m = renderer->map_texture(light_contrib_texture);
 
     unsigned* patch_offsets = (unsigned*)m.data;
-    Color total_light = {};
+    ColorRGB total_light = {};
     unsigned num_pixels = light_contrib_texture.width * light_contrib_texture.height;
     for (unsigned pixel_index = 0; pixel_index < num_pixels; ++pixel_index)
     {
         unsigned patch_index = patch_offsets[pixel_index];
         Patch& p = patches[patch_index];
-        total_light.r += p.emission;
-        total_light.g += p.emission;
-        total_light.b += p.emission;
+        total_light += p.excident;
     }
     renderer->unmap_texture(m);
     return total_light;
@@ -90,7 +90,10 @@ void map(World& world, Renderer* renderer)
 
         Patch base_patch = {};
         if (obj.is_light)
-            base_patch.emission = 1.0f;
+        {
+            base_patch.emission.r = base_patch.emission.g = base_patch.emission.b = 1.0f;
+            base_patch.excident = base_patch.emission;
+        }
 
         memset(patch_offsets, 0, patch_offsets_size);
 
@@ -125,6 +128,7 @@ void map(World& world, Renderer* renderer)
                 p.down = base_cam;
                 p.down.rotation = quaternion::normalize(quaternion::from_axis_angle(tangent, -PI/2) * p.front.rotation);
 
+                p.reflectance = 0.5f;
                 p.uv_index = pixel_index;
                 patch_offsets[pixel_index] = patches.num;
                 patches.add(p);
@@ -149,23 +153,34 @@ void map(World& world, Renderer* renderer)
     renderer->set_shader(light_contribution_shader);
     renderer->set_render_target(&light_contrib_texture);
 
-    for (unsigned patch_index = 0; patch_index < patches.num; ++patch_index)
+    for (unsigned pass = 0; pass < 2; ++pass)
     {
-        Patch& p = patches[patch_index];
-        windows::window::process_all_messsages();
-
-        if (keyboard::is_presssed(Key::Escape))
+        for (unsigned patch_index = 0; patch_index < patches.num; ++patch_index)
         {
-            return;
+            Patch& p = patches[patch_index];
+            windows::window::process_all_messsages();
+
+            if (keyboard::is_presssed(Key::Escape))
+            {
+                return;
+            }
+
+            ColorRGB incident = {};
+            incident += draw_hemicube_side(renderer, world, scissor_full, p.front, light_contrib_texture, patches.data);
+            incident += draw_hemicube_side(renderer, world, scissor_left, p.right, light_contrib_texture, patches.data);
+            incident += draw_hemicube_side(renderer, world, scissor_right, p.left, light_contrib_texture, patches.data);
+            incident += draw_hemicube_side(renderer, world, scissor_bottom, p.up, light_contrib_texture, patches.data);
+            incident += draw_hemicube_side(renderer, world, scissor_top, p.down, light_contrib_texture, patches.data);
+            p.incident.r = min(incident.r, 1);
+            p.incident.g = min(incident.g, 1);
+            p.incident.b = min(incident.b, 1);
         }
 
-        Color c = {};
-        c += draw_hemicube_side(renderer, world, scissor_full, p.front, light_contrib_texture, patches.data);
-        c += draw_hemicube_side(renderer, world, scissor_left, p.right, light_contrib_texture, patches.data);
-        c += draw_hemicube_side(renderer, world, scissor_right, p.left, light_contrib_texture, patches.data);
-        c += draw_hemicube_side(renderer, world, scissor_bottom, p.up, light_contrib_texture, patches.data);
-        c += draw_hemicube_side(renderer, world, scissor_top, p.down, light_contrib_texture, patches.data);
-        p.incident = c.r;
+        for (unsigned patch_index = 0; patch_index < patches.num; ++patch_index)
+        {
+            Patch& p = patches[patch_index];
+            p.excident = p.incident * p.reflectance + p.emission;
+        }
     }
 
     Image lightmap = {LightmapSize, LightmapSize, PixelFormat::R8G8B8A8_UINT_NORM};
@@ -180,9 +195,9 @@ void map(World& world, Renderer* renderer)
         {
             const Patch& p = patches[pbo[pi]];
             ColorUNorm& out_color = ((ColorUNorm*)lightmap.data)[p.uv_index];
-            out_color.r = ((unsigned char)min(p.incident, 1.0f)) * 255;
-            out_color.g = ((unsigned char)min(p.incident, 1.0f)) * 255;
-            out_color.b = ((unsigned char)min(p.incident, 1.0f)) * 255;
+            out_color.r = ((unsigned char)min(p.incident.r, 1.0f)) * 255;
+            out_color.g = ((unsigned char)min(p.incident.g, 1.0f)) * 255;
+            out_color.b = ((unsigned char)min(p.incident.b, 1.0f)) * 255;
             out_color.a = 255;
         }
 
