@@ -69,6 +69,7 @@ void map(const World& world, Renderer* renderer)
 
     for (unsigned i = 0; i < world.objects.num; ++i)
     {
+        renderer->disable_scissor();
         renderer->set_render_targets(vertex_data_rts, 2);
         renderer->set_shader(vertex_data_shader);
         renderer->pre_draw_frame();
@@ -99,7 +100,7 @@ void map(const World& world, Renderer* renderer)
             base_cam.position = {pos.x, pos.y, pos.z};
 
             p.front = base_cam;
-            static Vector3 origin = {0,0,0};
+            static const Vector3 origin = {0,0,0};
             p.front.rotation = quaternion::look_at(origin, n);
             Vector3 bitangent = vector3::bitangent(n);
             Vector3 tangent = vector3::tangent(n);

@@ -8,31 +8,11 @@
 #include "mouse.h"
 #include "test_world.h"
 
-static void key_pressed_callback(Key key)
-{
-    keyboard::pressed(key);
-}
-
-static void key_released_callback(Key key)
-{
-    keyboard::released(key);
-}
-
-static void mouse_moved_callback(const Vector2i& delta)
-{
-    mouse::add_delta(delta);
-}
-
 // Simulation impl.
 
-void Simulation::init(Renderer* renderer, WindowState* window_state, Allocator* alloc)
+void Simulation::init(Renderer* renderer, Allocator* alloc)
 {
     world::init(&world, alloc);
-    keyboard::init();
-    mouse::init();
-    window_state->key_released_callback = key_released_callback;
-    window_state->key_pressed_callback = key_pressed_callback;
-    window_state->mouse_moved_callback = mouse_moved_callback;
     test_world::create_world(&world, renderer);
     camera::set_projection_mode(&camera);
 }

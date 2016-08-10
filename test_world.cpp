@@ -48,18 +48,21 @@ void create_world(World* world, Renderer* renderer)
     if (!lm.valid)
         return;
 
-    /*float floor_width = 6;
+    float floor_width = 6;
     float floor_depth = 8;
     float floor_thickness = 0.3f;
     float floor_to_cieling = 2;
     float pillar_width = 0.4f;
 
-    world::add_object(world, create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random(), 4));
-    world::add_object(world, create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random(), 12));
-    world::add_object(world, create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random(), 123));
-    world::add_object(world, create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random(), 145));*/
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random(), 4));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random(), 12));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random(), 123));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random(), 145));
+    //world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling - 15, 0}, color::random(), 12333));
 
-    world->objects.add(create_scaled_box(renderer, lm.mesh, {5,5,5}, {0, 0, 0}, color::random(), 145));
+    //world->objects.add(create_scaled_box(renderer, lm.mesh, {2,2,2}, {10, -20, 0}, color::random(), 145));
+
+    //world->objects.add(create_scaled_box(renderer, lm.mesh, {1,1,1}, vector3::lookdir * 5, color::random(), 145));
 
     //world::add_object(world, create_scaled_box(renderer, lm.mesh, {1, 1, 1}, {-10, 0, 0}, color::random()));
 
@@ -70,7 +73,7 @@ void create_world(World* world, Renderer* renderer)
             lm.mesh.vertices[i].light_emittance = 1.0f;
         }
 
-        world->lights.add(create_scaled_box(renderer, lm.mesh, {10, 10, 10}, {15, 20, -19}, {0,1,1,1}, 10000));
+        world->lights.add(create_scaled_box(renderer, lm.mesh, {10, 10, 10}, {20, 25, -19}, {1,1,1,1}, 10000));
     }
 }
 

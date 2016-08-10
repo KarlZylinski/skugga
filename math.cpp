@@ -408,24 +408,40 @@ Quaternion normalize(const Quaternion& q)
 Quaternion look_at(const Vector3& source, const Vector3& dest)
 {
     Vector3 source_to_dest = vector3::normalize(dest - source);
-    static Vector3 forward = {0, 0, 1};
-    float dot = vector3::dot(forward, source_to_dest);
+    float dot = vector3::dot(vector3::forward, source_to_dest);
 
-    if (fabs(dot - (-1.0f)) < 0.00001f)
+    if (fabs(dot - (-1.0f)) < SmallNumber)
     {
-        return {0, 1, 0, 0};
+        return from_axis_angle(vector3::up, PI);
     }
 
-    if (fabs(dot - 1.0f) < 0.000001f)
+    if (fabs(dot - ( 1.0f)) < SmallNumber)
     {
         return identity();
     }
 
     float rot_angle = acos(dot);
-    Vector3 rot_axis = vector3::normalize(vector3::cross(forward, source_to_dest));
+    Vector3 rot_axis = vector3::normalize(vector3::cross(vector3::forward, source_to_dest));
     return from_axis_angle(rot_axis, rot_angle);
 }
 
+Quaternion conjugate(const Quaternion& q)
+{
+    return
+    {
+        -q.x,
+        -q.y,
+        -q.z,
+        q.w
+    };
+}
 
+Vector3 transform(const Quaternion& q, const Vector3& v)
+{
+    const Vector3 qv = {q.x, q.y, q.z};
+    const Vector3 uv = vector3::cross(qv, v);
+    const Vector3 uuv = vector3::cross(qv, uv);
+    return v + ((uv * q.w) + uuv) * 2.0f;
+}
 
 } // namespace quaternion

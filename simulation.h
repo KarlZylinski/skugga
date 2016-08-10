@@ -8,7 +8,7 @@ struct Allocator;
 
 struct Simulation
 {
-    void init(Renderer* renderer, WindowState* window_state, Allocator* alloc);
+    void init(Renderer* renderer, Allocator* alloc);
     void simulate();
     Camera camera;
     World world;

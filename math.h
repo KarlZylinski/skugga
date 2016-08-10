@@ -84,6 +84,11 @@ Vector3 tangent(const Vector3& v);
 Vector3 bitangent(const Vector3& v);
 Vector3 normalize(const Vector3& v);
 
+static const Vector3 up = {0, 1, 0};
+static const Vector3 forward = {0, 0, 1};
+static const Vector3 zero = {0, 0, 0};
+static const Vector3 lookdir = {0, 0, -1};
+
 } // namespace vector3
 
 namespace vector4
@@ -103,5 +108,7 @@ Quaternion from_axis_angle(const Vector3& axis, float angle);
 Quaternion identity();
 Quaternion normalize(const Quaternion& q);
 Quaternion look_at(const Vector3& source, const Vector3& dest);
+Quaternion conjugate(const Quaternion& q);
+Vector3 transform(const Quaternion&q, const Vector3& v);
 
-} // namespace quaternionQuaternion normalize(const Quaternion& q)
+} // namespace quaternion
