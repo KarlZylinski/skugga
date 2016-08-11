@@ -28,6 +28,21 @@ static void mouse_moved_callback(const Vector2i& delta)
     mouse::add_delta(delta);
 }
 
+void create_distortion_compensation_texture(unsigned char* pixels, unsigned size)
+{
+    const Vector3 observation_dir = {0,0,1};
+    const Vector3 observation_pos = {float(size/2),float(size/2),0};
+    const float plane_z = (float)size/2;
+    const unsigned num_pixels = size*size;
+    for (unsigned i = 0; i < num_pixels; ++i)
+    {
+        float x = (float)(i % size);
+        float y = (float)(i / size);
+        Vector3 p = {x, y, plane_z};
+        pixels[i] = (unsigned char)(vector3::dot(observation_dir, vector3::normalize(p - observation_pos)) * 255);
+    }
+}
+
 int main()
 {
     void* temp_memory_block = VirtualAlloc(nullptr, temp_memory::TempMemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);

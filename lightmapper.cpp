@@ -153,7 +153,7 @@ void map(World& world, Renderer* renderer)
     renderer->set_shader(light_contribution_shader);
     renderer->set_render_target(&light_contrib_texture);
 
-    for (unsigned pass = 0; pass < 2; ++pass)
+    for (unsigned pass = 0; pass < 1; ++pass)
     {
         for (unsigned patch_index = 0; patch_index < patches.num; ++patch_index)
         {

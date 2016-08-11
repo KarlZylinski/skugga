@@ -7,7 +7,7 @@ namespace file
 
 LoadedFile load(Allocator* alloc, const wchar* filename)
 {
-    FILE* file_handle = _wfopen(filename, L"r");
+    FILE* file_handle = _wfopen(filename, L"rb");
 
     if (file_handle == nullptr)
         return {false};
@@ -34,7 +34,7 @@ LoadedFile load(Allocator* alloc, const wchar* filename)
 
 bool write(const File& file, const wchar* filename)
 {
-    FILE* file_handle = _wfopen(filename, L"w");
+    FILE* file_handle = _wfopen(filename, L"wb");
 
     if (file_handle == nullptr)
         return false;
