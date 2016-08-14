@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math.h"
+struct Vector2i;
 
 void mouse_init();
 void mouse_add_delta(const Vector2i& delta);

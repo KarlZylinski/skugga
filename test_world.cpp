@@ -6,6 +6,7 @@
 #include "mesh.h"
 #include "obj.h"
 #include "file.h"
+#include "memory.h"
 
 static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color, unsigned id, bool is_light)
 {

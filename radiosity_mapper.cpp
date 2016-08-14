@@ -4,7 +4,11 @@
 #include "windows_window.h"
 #include "rect.h"
 #include "keyboard.h"
-#include "stdio.h"
+#include <stdio.h>
+#include "dynamic_array.h"
+#include "world.h"
+#include "camera.h"
+#include "memory.h"
 
 struct Patch
 {
@@ -107,8 +111,7 @@ void run_radiosity_mapper(World& world, Renderer* renderer)
 
                 Patch p = base_patch;
                 p.front = base_cam;
-                static const Vector3 origin = {0,0,0};
-                p.front.rotation = quaternion_look_at(origin, n);
+                p.front.rotation = quaternion_look_at(vector3_zero, n);
                 Vector3 bitangent = vector3_bitangent(n);
                 Vector3 tangent = vector3_tangent(n);
 

@@ -1,4 +1,5 @@
 #include "mouse.h"
+#include "math.h"
 
 struct Mouse
 {

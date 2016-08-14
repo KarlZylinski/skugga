@@ -12,6 +12,8 @@
 #include "radiosity_mapper.h"
 #include "test_world.h"
 #include "mesh.h"
+#include "world.h"
+#include "camera.h"
 
 static void key_pressed_callback(Key key)
 {
@@ -50,7 +52,7 @@ static void create_cosine_law_texture(unsigned char* pixels, unsigned size)
     const float double_size = (float)(size*2);
     const unsigned num_pixels = size*size;
     const Vector3 normal = {0, 1, 0};
-    const Vector3 pos = {0, 0, 0};
+    const Vector3 pos = vector3_zero;
     for (unsigned i = 0; i < num_pixels; ++i)
     {
         const float x = (float)(i % size) - half_size;
@@ -128,7 +130,7 @@ static void process_input(Camera* camera)
     }
 
     camera->rotation = rotation;
-    Matrix4x4 camera_test_mat = matrix4x4_from_rotation_and_translation(camera->rotation, {0,0,0});
+    Matrix4x4 camera_test_mat = matrix4x4_from_rotation_and_translation(camera->rotation, vector3_zero);
     Matrix4x4 movement_rotated = move * camera_test_mat;
     camera->position += *(Vector3*)&movement_rotated.w.x;
 }
@@ -206,7 +208,7 @@ int main()
         create_test_world(&world, &renderer);
         Camera camera = camera_create_projection();
 
-        //simulation.camera.rotation = quaternion_normalize(quaternion_from_axis_angle({0,1,0}, -PI/2) * quaternion_look_at({0,0,0},{-1,0,0}));
+        //simulation.camera.rotation = quaternion_normalize(quaternion_from_axis_angle({0,1,0}, -PI/2) * quaternion_look_at(vector3_zero,{-1,0,0}));
         //quaternion_look_at(vector3::zero, vector3::lookdir);
         renderer.disable_scissor();
         renderer.set_render_target(&renderer.back_buffer);

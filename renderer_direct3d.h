@@ -1,10 +1,8 @@
 #pragma once
 
 #include "image.h"
-#include "renderer.h"
-#include "world.h"
-#include "camera.h"
-#include "memory.h"
+#include "color.h"
+#include "math.h"
 
 struct ID3D11Buffer;
 struct ID3D11Texture2D;
@@ -21,6 +19,10 @@ struct ID3D11DepthStencilView;
 struct ID3D11RasterizerState;
 struct IDXGISwapChain;
 struct ID3D11SamplerState;
+struct World;
+struct Object;
+struct Camera;
+struct Vertex;
 
 struct ConstantBuffer
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "memory.h"
+struct Allocator;
 
 struct File
 {

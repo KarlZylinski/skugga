@@ -1,7 +1,5 @@
 #pragma once
 
-#include "types.h"
-
 //#define MEMORY_TRACING_ENABLE
 
 #if defined(MEMORY_TRACING_ENABLE)

@@ -1,10 +1,13 @@
+#include "renderer_direct3d.h"
 #include <d3d11.h>
 #include <D3Dcompiler.h>
-#include "renderer_direct3d.h"
+#include "renderer.h"
 #include "world.h"
 #include "config.h"
 #include "rect.h"
 #include "file.h"
+#include "camera.h"
+#include "memory.h"
 
 static DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
 {
