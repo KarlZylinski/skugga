@@ -7,25 +7,7 @@ int main()
 {
     unsigned temp_memory_size = 1024 * 1024 * 100;
     void* temp_memory_block = malloc(temp_memory_size);
-    temp_memory::init(temp_memory_block, temp_memory_size);
-    
-    {
-        unsigned s = 128;
-        unsigned char* p1 = (unsigned char*)temp_memory::alloc(s);
-        memset(p1, 0xda, s);
-        unsigned char* p2 = (unsigned char*)temp_memory::alloc(s);
-        memset(p2, 0xfe, s);
-        unsigned char* p3 = (unsigned char*)temp_memory::alloc(s);
-        memset(p3, 0x3e, s);
-        temp_memory::dealloc(p2);
-        for (unsigned i = 0; i < s; ++i)
-        {
-            assert(p1[i] == 0xda);
-        }
-        temp_memory::dealloc(p1);
-        temp_memory::dealloc(p3);
-        assert(temp_memory::tms.head == temp_memory::tms.start);
-    }
+    temp_memory_blob_init(temp_memory_block, temp_memory_size);
 
     {
         Allocator ta = create_temp_allocator();
@@ -38,5 +20,19 @@ int main()
         memset(p3, 0xcc, s);
     }
     
-    assert(temp_memory::tms.head == temp_memory::tms.start);
+    {
+        Allocator ta1 = create_temp_allocator();
+        unsigned s = 128;
+        unsigned char* p1 = (unsigned char*)ta1.alloc(s);
+        memset(p1, 0xaa, s);
+        Allocator ta2 = create_temp_allocator();
+        unsigned char* p2 = (unsigned char*)ta2.alloc(s);
+        memset(p2, 0xbb, s);
+        unsigned char* p3 = (unsigned char*)ta1.alloc(s);
+        memset(p3, 0xcc, s);
+        unsigned char* p4 = (unsigned char*)ta1.alloc(s);
+        memset(p4, 0xdd, s);
+    }
+
+    assert(tms.head == tms.start);
 }

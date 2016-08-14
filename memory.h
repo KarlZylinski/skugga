@@ -30,8 +30,8 @@ struct Allocator
     void*(*alloc_internal)(Allocator* alloc, unsigned size);
     void(*dealloc_internal)(Allocator* alloc, void* ptr);
     void(*out_of_scope)(Allocator* alloc);
-    static const unsigned MaxAllocations = 128;
-    void* allocations[MaxAllocations];
+    void* last_alloc;
+    void* first_alloc;
     unsigned num_allocations;
 
     #if defined(MEMORY_TRACING_ENABLE)
@@ -43,28 +43,12 @@ static const unsigned DefaultMemoryAlign = 8;
 unsigned mem_ptr_diff(void* ptr1, void* ptr2);
 void* mem_ptr_add(void* ptr1, unsigned offset);
 void* mem_ptr_sub(void* ptr1, unsigned offset);
-void* mem_align_forward(void* p, unsigned align = DefaultMemoryAlign);
+void* mem_align_forward(void* p, unsigned align);
 
 void temp_memory_blob_init(void* start, unsigned capacity);
-void* temp_memory_blob_alloc(unsigned size, unsigned align = DefaultMemoryAlign);
-void temp_memory_blob_dealloc(void* ptr);
 const unsigned TempMemorySize = 1024 * 1024 * 1024;
 
-void* temp_allocator_alloc(Allocator* allocator, unsigned size);
-void temp_allocator_dealloc(Allocator* allocator, void* ptr);
-void temp_allocator_dealloc_all(Allocator* allocator);
-
-void* heap_allocator_alloc(Allocator* allocator, unsigned size);
-void heap_allocator_dealloc(Allocator* allocator, void* ptr);
 void heap_allocator_check_clean(Allocator* allocator);
 
-inline Allocator create_temp_allocator()
-{
-    Allocator a = {};
-    a.alloc_internal = temp_allocator_alloc;
-    a.dealloc_internal = temp_allocator_dealloc;
-    a.out_of_scope = temp_allocator_dealloc_all;
-    return a;
-}
- 
+Allocator create_temp_allocator();
 Allocator create_heap_allocator();

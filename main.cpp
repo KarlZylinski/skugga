@@ -152,7 +152,7 @@ int main()
     window.state.mouse_moved_callback = mouse_moved_callback;
     Allocator alloc = create_heap_allocator();
 
-    bool render_fullscreen_quad = false;
+    bool render_fullscreen_quad = true;
     if (render_fullscreen_quad) {
         unsigned s = 128;
         unsigned num_pixels = 128*128;

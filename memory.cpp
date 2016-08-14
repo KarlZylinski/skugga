@@ -2,20 +2,6 @@
 #include "types.h"
 #include <stdlib.h>
 
-struct TempMemoryHeader
-{
-    bool freed;
-    TempMemoryHeader* prev;
-    unsigned size;
-};
-
-struct TempMemoryStorage
-{
-    unsigned char* start;
-    unsigned char* head;
-    unsigned capacity;
-};
-
 unsigned mem_ptr_diff(void* ptr1, void* ptr2)
 {
     return (unsigned)((unsigned char*)ptr2 - (unsigned char*)ptr1);
@@ -42,6 +28,13 @@ void* mem_align_forward(void* p, unsigned align)
     return (void *)pi;
 }
 
+struct TempMemoryStorage
+{
+    unsigned char* start;
+    unsigned char* head;
+    unsigned capacity;
+};
+
 static TempMemoryStorage tms;
 
 void temp_memory_blob_init(void* start, unsigned capacity)
@@ -52,12 +45,24 @@ void temp_memory_blob_init(void* start, unsigned capacity)
     tms.capacity = capacity;
 }
 
-void* temp_memory_blob_alloc(unsigned size, unsigned align)
+struct TempMemoryHeader
+{
+    bool freed;
+    TempMemoryHeader* prev;
+    TempMemoryHeader* next_for_allocator;
+    unsigned size;
+};
+
+void* temp_memory_blob_alloc(unsigned size, TempMemoryHeader* allocator_latest, unsigned align)
 {
     Assert(mem_ptr_diff(tms.start, tms.head + align + size + sizeof(TempMemoryHeader)) < tms.capacity, "Out of temp memory");
     TempMemoryHeader* tmh = (TempMemoryHeader*)mem_align_forward(tms.head, align);
     tmh->freed = false;
     tmh->size = size + align;
+    tmh->next_for_allocator = nullptr;
+
+    if (allocator_latest != nullptr)
+        allocator_latest->next_for_allocator = tmh;
     
     if (tms.head == tms.start)
         tmh->prev = nullptr;
@@ -82,67 +87,58 @@ void temp_memory_blob_dealloc(void* ptr)
     TempMemoryHeader* tmh = (TempMemoryHeader*)mem_ptr_sub(ptr, sizeof(TempMemoryHeader));
     tmh->freed = true;
 
-    // Are we the last block?
-    if (mem_align_forward(mem_ptr_add(ptr, tmh->size)) != tms.head)
+    // Free all blocks for the allocator that owns it.
+    while (tmh != nullptr)
+    {
+        tmh->freed = true;
+
+        if (tmh->next_for_allocator == nullptr)
+            break;
+
+        tmh = tmh->next_for_allocator;
+    }
+
+    // We did not end up at last block. Just quit. Some other dealloaction will trigger the rewind.
+    if (tmh != mem_ptr_sub(tms.head, tmh->size + sizeof(TempMemoryHeader)))
         return;
 
     // Continue backwards in temp memory, rewinding other freed blocks.
     while (tmh != nullptr && tmh->freed)
-    {
         tmh = tmh->prev;
-    }
 
-    tms.head = tmh == nullptr ? tms.start : (unsigned char*)tmh;
+    tms.head = tmh == nullptr
+        ? tms.head = tms.start
+        : (unsigned char*)mem_ptr_add(tmh, tmh->size);
 }
 
 void* temp_allocator_alloc(Allocator* allocator, unsigned size)
 {
-    Assert(allocator->num_allocations + 1 < Allocator::MaxAllocations, "Too many allocations.");
-    void* p = temp_memory_blob_alloc(size);
+    void* p = temp_memory_blob_alloc(
+        size,
+        allocator->last_alloc == nullptr
+            ? nullptr
+            : (TempMemoryHeader*)mem_ptr_sub(allocator->last_alloc, sizeof(TempMemoryHeader)),
+        DefaultMemoryAlign
+    );
     Assert(p != nullptr, "Failed to allocate memory.");
-    allocator->allocations[allocator->num_allocations++] = p;
+    allocator->last_alloc = p;
+    allocator->first_alloc = allocator->first_alloc == nullptr ? p : allocator->first_alloc;
     return p;
 }
 
 void temp_allocator_dealloc(Allocator* allocator, void* ptr)
 {
-    if (ptr == nullptr)
-        return;
-
-    temp_memory_blob_dealloc(ptr);
-
-    for (unsigned i = 0; i < allocator->num_allocations; ++i)
-    {
-        if (allocator->allocations[i] == ptr)
-        {
-            unsigned last_index = allocator->num_allocations - 1;
-            if (allocator->num_allocations > 1 && i != last_index)
-            {
-                allocator->allocations[i] = allocator->allocations[last_index];
-                allocator->allocations[last_index] = nullptr;
-            }
-            else
-            {
-                allocator->allocations[i] = nullptr;
-            }
-
-            --allocator->num_allocations;
-            break;
-        }
-    }
 }
 
 void temp_allocator_dealloc_all(Allocator* allocator)
 {
-    for (unsigned char i = 0; i < allocator->num_allocations; ++i)
-    {
-        temp_memory_blob_dealloc(allocator->allocations[i]);
-    }
+    if (allocator->first_alloc == nullptr)
+        return;
 
-    memset(allocator->allocations, 0, sizeof(void*) * Allocator::MaxAllocations);
-    allocator->num_allocations = 0;
+    temp_memory_blob_dealloc(allocator->first_alloc);
 }
 
+#if defined(MEMORY_TRACING_ENABLE)
 static void add_captured_callstack(CapturedCallstack* callstacks, const CapturedCallstack& cc)
 {
     for (unsigned i = 0; i < MaxCaputredCallstacks; ++i)
@@ -180,6 +176,7 @@ static void ensure_captured_callstacks_unused(CapturedCallstack* callstacks)
         callstack_print("Memory leak stack trace", callstacks + i);
     }
 }
+#endif
 
 void* heap_allocator_alloc(Allocator* allocator, unsigned size)
 {
@@ -214,6 +211,16 @@ void heap_allocator_check_clean(Allocator* allocator)
 
     Assert(allocator->num_allocations == 0, "Heap allocator not clean on shutdown.");
 }
+
+Allocator create_temp_allocator()
+{
+    Allocator a = {};
+    a.alloc_internal = temp_allocator_alloc;
+    a.dealloc_internal = temp_allocator_dealloc;
+    a.out_of_scope = temp_allocator_dealloc_all;
+    return a;
+}
+
 
 Allocator create_heap_allocator()
 {
