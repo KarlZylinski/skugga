@@ -1,8 +1,8 @@
 #pragma once
 
-//#define MEMORY_TRACING_ENABLE
+//#define ENABLE_MEMORY_TRACING
 
-#if defined(MEMORY_TRACING_ENABLE)
+#if defined(ENABLE_MEMORY_TRACING)
     #include "callstack_capturer.h"
 #endif
 
@@ -32,7 +32,7 @@ struct Allocator
     void* last_alloc;
     unsigned num_allocations;
 
-    #if defined(MEMORY_TRACING_ENABLE)
+    #if defined(ENABLE_MEMORY_TRACING)
         CapturedCallstack* captured_callstacks;
     #endif
 };

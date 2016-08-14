@@ -165,7 +165,7 @@ void temp_allocator_dealloc_all(Allocator* allocator)
     temp_memory_blob_dealloc(allocator->last_alloc);
 }
 
-#if defined(MEMORY_TRACING_ENABLE)
+#if defined(ENABLE_MEMORY_TRACING)
 static const unsigned max_captured_callstacks = 1024;
 
 static void add_captured_callstack(CapturedCallstack* callstacks, const CapturedCallstack& cc)
@@ -213,7 +213,7 @@ void* heap_allocator_alloc(Allocator* allocator, unsigned size, unsigned align)
     static const unsigned diff_to_header_size = sizeof(unsigned);
     void* p = malloc(size + align + diff_to_header_size);
 
-    #ifdef MEMORY_TRACING_ENABLE
+    #if defined(ENABLE_MEMORY_TRACING)
         if (allocator->captured_callstacks == nullptr)
         {
             unsigned cc_size = sizeof(CapturedCallstack) * max_captured_callstacks;
@@ -240,7 +240,7 @@ void heap_allocator_dealloc(Allocator* allocator, void* aligned_ptr)
     unsigned diff_to_header = *(unsigned*)mem_ptr_sub(aligned_ptr, sizeof(unsigned));
     void* p = mem_ptr_sub(aligned_ptr, diff_to_header);
 
-    #ifdef MEMORY_TRACING_ENABLE
+    #if defined(ENABLE_MEMORY_TRACING)
         remove_captured_callstack(allocator->captured_callstacks, p);
     #endif
 
@@ -250,7 +250,7 @@ void heap_allocator_dealloc(Allocator* allocator, void* aligned_ptr)
 
 void heap_allocator_check_clean(Allocator* allocator)
 {
-    #ifdef MEMORY_TRACING_ENABLE
+    #if defined(ENABLE_MEMORY_TRACING)
         ensure_captured_callstacks_unused(allocator->captured_callstacks);
     #endif
 
