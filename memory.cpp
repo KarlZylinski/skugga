@@ -80,9 +80,9 @@ struct TempMemoryHeader
 
 static void* temp_memory_blob_alloc(unsigned size, void* allocator_latest, unsigned align)
 {
-    const unsigned header_align = alignof(TempMemoryHeader);
-    const unsigned header_size = sizeof(TempMemoryHeader);
-    const unsigned diff_to_header_size = sizeof(unsigned);
+    static const unsigned header_align = alignof(TempMemoryHeader);
+    static const unsigned header_size = sizeof(TempMemoryHeader);
+    static const unsigned diff_to_header_size = sizeof(unsigned);
     Assert(mem_ptr_diff(tms.start, tms.head + align + header_align + size + header_size + diff_to_header_size) < tms.capacity, "Out of temp memory");
     TempMemoryHeader* tmh = (TempMemoryHeader*)mem_align_forward(tms.head, header_align);
     tmh->freed = false;
@@ -210,7 +210,8 @@ static void ensure_captured_callstacks_unused(CapturedCallstack* callstacks)
 void* heap_allocator_alloc(Allocator* allocator, unsigned size, unsigned align)
 {
     ++allocator->num_allocations;
-    void* p = malloc(size);
+    static const unsigned diff_to_header_size = sizeof(unsigned);
+    void* p = malloc(size + align + diff_to_header_size);
 
     #ifdef MEMORY_TRACING_ENABLE
         if (allocator->captured_callstacks == nullptr)
@@ -223,19 +224,27 @@ void* heap_allocator_alloc(Allocator* allocator, unsigned size, unsigned align)
         add_captured_callstack(allocator->captured_callstacks, callstack_capture(1, p));
     #endif
 
-    return p;
+    void* after_header = mem_ptr_add(p, diff_to_header_size);
+    void* ptr_return = mem_align_forward(after_header, align);
+    // Since we don't know how much we align every time, we have a little header which says how far back the actual ptr lives.
+    unsigned diff_to_header = mem_ptr_diff(p, ptr_return);
+    *(unsigned*)mem_ptr_sub(ptr_return, diff_to_header_size) = diff_to_header;
+    return ptr_return;
 }
 
-void heap_allocator_dealloc(Allocator* allocator, void* ptr)
+void heap_allocator_dealloc(Allocator* allocator, void* aligned_ptr)
 {
-    if (ptr == nullptr)
+    if (aligned_ptr == nullptr)
         return;
 
+    unsigned diff_to_header = *(unsigned*)mem_ptr_sub(aligned_ptr, sizeof(unsigned));
+    void* p = mem_ptr_sub(aligned_ptr, diff_to_header);
+
     #ifdef MEMORY_TRACING_ENABLE
-        remove_captured_callstack(allocator->captured_callstacks, ptr);
+        remove_captured_callstack(allocator->captured_callstacks, p);
     #endif
 
-    free(ptr);
+    free(p);
     --allocator->num_allocations;
 }
 
