@@ -108,21 +108,21 @@ void run_radiosity_mapper(World& world, Renderer* renderer)
                 Patch p = base_patch;
                 p.front = base_cam;
                 static const Vector3 origin = {0,0,0};
-                p.front.rotation = quaternion::look_at(origin, n);
-                Vector3 bitangent = vector3::bitangent(n);
-                Vector3 tangent = vector3::tangent(n);
+                p.front.rotation = quaternion_look_at(origin, n);
+                Vector3 bitangent = vector3_bitangent(n);
+                Vector3 tangent = vector3_tangent(n);
 
                 p.right = base_cam;
-                p.right.rotation = quaternion::normalize(quaternion::from_axis_angle(bitangent, PI/2) * p.front.rotation);
+                p.right.rotation = quaternion_normalize(quaternion_from_axis_angle(bitangent, PI/2) * p.front.rotation);
 
                 p.left = base_cam;
-                p.left.rotation = quaternion::normalize(quaternion::from_axis_angle(bitangent, -PI/2) * p.front.rotation);
+                p.left.rotation = quaternion_normalize(quaternion_from_axis_angle(bitangent, -PI/2) * p.front.rotation);
 
                 p.up = base_cam;
-                p.up.rotation = quaternion::normalize(quaternion::from_axis_angle(tangent, PI/2) * p.front.rotation);
+                p.up.rotation = quaternion_normalize(quaternion_from_axis_angle(tangent, PI/2) * p.front.rotation);
 
                 p.down = base_cam;
-                p.down.rotation = quaternion::normalize(quaternion::from_axis_angle(tangent, -PI/2) * p.front.rotation);
+                p.down.rotation = quaternion_normalize(quaternion_from_axis_angle(tangent, -PI/2) * p.front.rotation);
 
                 p.reflectance = 0.5f;
                 p.uv_index = pixel_index;

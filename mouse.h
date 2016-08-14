@@ -2,12 +2,8 @@
 
 #include "math.h"
 
-namespace mouse
-{
+void mouse_init();
+void mouse_add_delta(const Vector2i& delta);
+void mouse_end_of_frame();
 
-void init();
-void add_delta(const Vector2i& delta);
-const Vector2i& delta();
-void end_of_frame();
-
-}
+const Vector2i& mouse_movement_delta();

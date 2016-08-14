@@ -9,9 +9,4 @@ struct LoadedMesh
     Mesh mesh;
 };
 
-namespace obj
-{
-
-LoadedMesh load(Allocator* alloc, const char* filename);
-
-}
+LoadedMesh obj_load(Allocator* alloc, const char* filename);

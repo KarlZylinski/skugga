@@ -21,7 +21,7 @@ static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3
     RRHandle box_geometry_handle = renderer->load_geometry(scaled_vertices, m.vertices.num, m.indices.data, m.indices.num);
     Object obj = {0};
     obj.geometry_handle = box_geometry_handle;
-    obj.world_transform = matrix4x4::identity();
+    obj.world_transform = matrix4x4_identity();
     obj.id = id;
     obj.is_light = is_light;
     memcpy(&obj.world_transform.w.x, &pos.x, sizeof(Vector3));
@@ -47,7 +47,7 @@ static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3
 void create_test_world(World* world, Renderer* renderer)
 {
     Allocator ta = create_temp_allocator();
-    LoadedMesh lm = obj::load(&ta, "box.wobj");
+    LoadedMesh lm = obj_load(&ta, "box.wobj");
 
     if (!lm.valid)
         return;

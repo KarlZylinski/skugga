@@ -6,39 +6,36 @@
 #include "rect.h"
 #include "file.h"
 
-namespace
+static DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
 {
-    DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
+    switch(pf)
     {
-        switch(pf)
-        {
-        case PixelFormat::R8G8B8A8_UINT:
-            return DXGI_FORMAT_R8G8B8A8_UINT;
-        case PixelFormat::R8G8B8A8_UINT_NORM:
-            return DXGI_FORMAT_R8G8B8A8_UNORM;
-        case PixelFormat::R32G32B32A32_FLOAT:
-            return DXGI_FORMAT_R32G32B32A32_FLOAT;
-        case PixelFormat::R32_UINT:
-            return DXGI_FORMAT_R32_UINT;
-        case PixelFormat::R8_UINT_NORM:
-            return DXGI_FORMAT_R8_UNORM;
-        default:
-            Error("Pixel format conversion in dxgi missing.");
-            return DXGI_FORMAT_UNKNOWN;
-        }
+    case PixelFormat::R8G8B8A8_UINT:
+        return DXGI_FORMAT_R8G8B8A8_UINT;
+    case PixelFormat::R8G8B8A8_UINT_NORM:
+        return DXGI_FORMAT_R8G8B8A8_UNORM;
+    case PixelFormat::R32G32B32A32_FLOAT:
+        return DXGI_FORMAT_R32G32B32A32_FLOAT;
+    case PixelFormat::R32_UINT:
+        return DXGI_FORMAT_R32_UINT;
+    case PixelFormat::R8_UINT_NORM:
+        return DXGI_FORMAT_R8_UNORM;
+    default:
+        Error("Pixel format conversion in dxgi missing.");
+        return DXGI_FORMAT_UNKNOWN;
+    }
+}
+
+static void check_ok(HRESULT res)
+{
+    if (res >= 0)
+    {
+        return;
     }
 
-    void check_ok(HRESULT res)
-    {
-        if (res >= 0)
-        {
-            return;
-        }
-
-        static char msg[120];
-        wsprintf(msg, "Error in renderer: %0x", res);
-        MessageBox(nullptr, msg, nullptr, 0);
-    }
+    static char msg[120];
+    wsprintf(msg, "Error in renderer: %0x", res);
+    MessageBox(nullptr, msg, nullptr, 0);
 }
 
 Image image_from_render_target(const RenderTarget& rt)
@@ -138,17 +135,14 @@ void Renderer::shutdown()
     device_context->Release();
 }
 
-namespace
+static void check_shader_error(ID3DBlob* error_blob)
 {
-    void check_shader_error(ID3DBlob* error_blob)
+    if (error_blob)
     {
-        if (error_blob)
-        {
-            Error((char*)error_blob->GetBufferPointer());
-        }
-        else
-            Error("Unknown shader errror.");
+        Error((char*)error_blob->GetBufferPointer());
     }
+    else
+        Error("Unknown shader errror.");
 }
 
 RRHandle Renderer::load_shader(const char* filename)

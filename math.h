@@ -54,61 +54,36 @@ Matrix4x4 operator*(const Matrix4x4& m, float s);
 Vector4 operator-(const Vector4& v1, const Vector4& v2);
 Quaternion operator*(const Quaternion& a, const Quaternion& b);
 
-namespace matrix4x4
-{
-
-Matrix4x4 identity();
-Matrix4x4 inverse(const Matrix4x4& m);
-Matrix4x4 from_rotation_and_translation(const Quaternion& q, const Vector3& t);
-Vector3 right(const Matrix4x4& m);
-Vector3 up(const Matrix4x4& m);
-
-} // namespace matrix4x4
-
-namespace vector2
-{
-
 bool almost_equal(const Vector2& v1, const Vector2& v2);
-
-} // namespace vector2
-
-namespace vector3
-{
-
 bool almost_equal(const Vector3& v1, const Vector3& v2);
-Vector3 cross(const Vector3& v1, const Vector3& v2);
-float length(const Vector3& v);
-float squared_length(const Vector3& v);
-float dot(const Vector3& v1, const Vector3& v2);
-Vector3 tangent(const Vector3& v);
-Vector3 bitangent(const Vector3& v);
-Vector3 normalize(const Vector3& v);
 
-static const Vector3 up = {0, 1, 0};
-static const Vector3 forward = {0, 0, 1};
-static const Vector3 zero = {0, 0, 0};
-static const Vector3 lookdir = {0, 0, -1};
+Matrix4x4 matrix4x4_identity();
+Matrix4x4 matrix4x4_inverse(const Matrix4x4& m);
+Matrix4x4 matrix4x4_from_rotation_and_translation(const Quaternion& q, const Vector3& t);
+Vector3 matrix4x4_right(const Matrix4x4& m);
+Vector3 matrix4x4_up(const Matrix4x4& m);
 
-} // namespace vector3
+Vector3 vector3_cross(const Vector3& v1, const Vector3& v2);
+float vector3_length(const Vector3& v);
+float vector3_squared_length(const Vector3& v);
+float vector3_dot(const Vector3& v1, const Vector3& v2);
+Vector3 vector3_tangent(const Vector3& v);
+Vector3 vector3_bitangent(const Vector3& v);
+Vector3 vector3_normalize(const Vector3& v);
 
-namespace vector4
-{
+static const Vector3 vector3_up = {0, 1, 0};
+static const Vector3 vector3_forward = {0, 0, 1};
+static const Vector3 vector3_zero = {0, 0, 0};
+static const Vector3 vector3_lookdir = {0, 0, -1};
 
-float dot(const Vector4& v1, const Vector4& v2);
+float vector4_dot(const Vector4& v1, const Vector4& v2);
 
-} // namespace vector4
-
-namespace quaternion
-{
-
-Quaternion rotate_x(const Quaternion& q, float rads);
-Quaternion rotate_y(const Quaternion& q, float rads);
-Quaternion rotate_z(const Quaternion& q, float rads);
-Quaternion from_axis_angle(const Vector3& axis, float angle);
-Quaternion identity();
-Quaternion normalize(const Quaternion& q);
-Quaternion look_at(const Vector3& source, const Vector3& dest);
-Quaternion conjugate(const Quaternion& q);
-Vector3 transform(const Quaternion&q, const Vector3& v);
-
-} // namespace quaternion
+Quaternion quaternion_rotate_x(const Quaternion& q, float rads);
+Quaternion quaternion_rotate_y(const Quaternion& q, float rads);
+Quaternion quaternion_rotate_z(const Quaternion& q, float rads);
+Quaternion quaternion_from_axis_angle(const Vector3& axis, float angle);
+Quaternion quaternion_identity();
+Quaternion quaternion_normalize(const Quaternion& q);
+Quaternion quaternion_look_at(const Vector3& source, const Vector3& dest);
+Quaternion quaternion_conjugate(const Quaternion& q);
+Vector3 quaternion_transform_vector3(const Quaternion&q, const Vector3& v);

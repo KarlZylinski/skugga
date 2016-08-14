@@ -25,7 +25,7 @@ static void key_released_callback(Key key)
 
 static void mouse_moved_callback(const Vector2i& delta)
 {
-    mouse::add_delta(delta);
+    mouse_add_delta(delta);
 }
 
 static void create_distortion_compensation_texture(unsigned char* pixels, unsigned size)
@@ -39,7 +39,7 @@ static void create_distortion_compensation_texture(unsigned char* pixels, unsign
         float x = (float)(i % size);
         float y = (float)(i / size);
         Vector3 p = {x, y, plane_z};
-        pixels[i] = (unsigned char)(vector3::dot(observation_dir, vector3::normalize(p - observation_pos)) * 255);
+        pixels[i] = (unsigned char)(vector3_dot(observation_dir, vector3_normalize(p - observation_pos)) * 255);
     }
 }
 
@@ -59,7 +59,7 @@ static void create_cosine_law_texture(unsigned char* pixels, unsigned size)
         const float hz = z/2;
         const float y1 = sqrtf(fourth_size * fourth_size - hx*hx - hz*hz);
         const Vector3 light_pos = {hx, y1, hz};
-        const unsigned char color = (unsigned char)(vector3::dot(normal, vector3::normalize(light_pos - pos)) * 255);
+        const unsigned char color = (unsigned char)(vector3_dot(normal, vector3_normalize(light_pos - pos)) * 255);
         pixels[i] = color;
     }
 }
@@ -100,7 +100,7 @@ static Mesh create_quad(Allocator* alloc)
 
 static void process_input(Camera* camera)
 {
-    Matrix4x4 move = matrix4x4::identity();
+    Matrix4x4 move = matrix4x4_identity();
 
     if (key_is_held(Key::W))
     {
@@ -120,15 +120,15 @@ static void process_input(Camera* camera)
     }
 
     Quaternion rotation = camera->rotation;
-
-    if (mouse::delta().x != 0 || mouse::delta().y != 0)
+    Vector2i mouse_movement = mouse_movement_delta();
+    if (mouse_movement.x != 0 || mouse_movement.y != 0)
     {
-        rotation = quaternion::rotate_y(rotation, mouse::delta().x * 0.001f);
-        rotation = quaternion::rotate_x(rotation, mouse::delta().y * 0.001f);
+        rotation = quaternion_rotate_y(rotation, mouse_movement.x * 0.001f);
+        rotation = quaternion_rotate_x(rotation, mouse_movement.y * 0.001f);
     }
 
     camera->rotation = rotation;
-    Matrix4x4 camera_test_mat = matrix4x4::from_rotation_and_translation(camera->rotation, {0,0,0});
+    Matrix4x4 camera_test_mat = matrix4x4_from_rotation_and_translation(camera->rotation, {0,0,0});
     Matrix4x4 movement_rotated = move * camera_test_mat;
     camera->position += *(Vector3*)&movement_rotated.w.x;
 }
@@ -146,7 +146,7 @@ int main()
     renderer.init(window.handle);
 
     keyboard_init();
-    mouse::init();
+    mouse_init();
     window.state.key_released_callback = key_released_callback;
     window.state.key_pressed_callback = key_pressed_callback;
     window.state.mouse_moved_callback = mouse_moved_callback;
@@ -165,14 +165,14 @@ int main()
         RRHandle quad_geo = renderer.load_geometry(q.vertices.data, q.vertices.num, q.indices.data, q.indices.num);
         Object obj = {};
         obj.geometry_handle = quad_geo;
-        obj.world_transform = matrix4x4::identity();
+        obj.world_transform = matrix4x4_identity();
         obj.lightmap_handle = tex;
         World w = world_create(&alloc);
         w.objects.add(obj);
 
         Camera c = {};
-        c.rotation = quaternion::identity();
-        c.projection_matrix = matrix4x4::identity();
+        c.rotation = quaternion_identity();
+        c.projection_matrix = matrix4x4_identity();
 
         renderer.disable_scissor();
         renderer.set_render_target(&renderer.back_buffer);
@@ -186,7 +186,7 @@ int main()
             renderer.draw_frame(w, c, DrawLights::DrawLights);
             renderer.present();
             keyboard_end_of_frame();
-            mouse::end_of_frame();
+            mouse_end_of_frame();
         }
     }
     else
@@ -203,8 +203,8 @@ int main()
         create_test_world(&world, &renderer);
         Camera camera = camera_create_projection();
 
-        //simulation.camera.rotation = quaternion::normalize(quaternion::from_axis_angle({0,1,0}, -PI/2) * quaternion::look_at({0,0,0},{-1,0,0}));
-        //quaternion::look_at(vector3::zero, vector3::lookdir);
+        //simulation.camera.rotation = quaternion_normalize(quaternion_from_axis_angle({0,1,0}, -PI/2) * quaternion_look_at({0,0,0},{-1,0,0}));
+        //quaternion_look_at(vector3::zero, vector3::lookdir);
         renderer.disable_scissor();
         renderer.set_render_target(&renderer.back_buffer);
         RRHandle default_shader = renderer.load_shader("shader.shader");
@@ -218,7 +218,7 @@ int main()
             renderer.draw_frame(world, camera, DrawLights::DrawLights);
             renderer.present();
             keyboard_end_of_frame();
-            mouse::end_of_frame();
+            mouse_end_of_frame();
         }
     }
 

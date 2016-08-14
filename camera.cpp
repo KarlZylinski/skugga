@@ -3,7 +3,7 @@
 
 Matrix4x4 camera_calc_view_matrix(const Camera& c)
 {
-    return matrix4x4::inverse(matrix4x4::from_rotation_and_translation(c.rotation, c.position));
+    return matrix4x4_inverse(matrix4x4_from_rotation_and_translation(c.rotation, c.position));
 }
 
 Camera camera_create_projection()
@@ -22,7 +22,7 @@ Camera camera_create_projection()
         0, 0, far_plane/(far_plane-near_plane), 1,
         0, 0, (-far_plane * near_plane) / (far_plane - near_plane), 0 
     };
-    c.rotation = quaternion::identity();
+    c.rotation = quaternion_identity();
     return c;
 }
 
@@ -35,6 +35,6 @@ Camera camera_create_uv_rendering()
         0, 0, 1, 0,
         1, -1, 0, 1 
     };
-    c.rotation = quaternion::identity();
+    c.rotation = quaternion_identity();
     return c;
 }

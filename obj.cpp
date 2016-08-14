@@ -145,9 +145,9 @@ static int get_existing_vertex(const DynamicArray<Vertex>& vertices, const Verte
     {
         const Vertex& v2 = vertices[i];
 
-        if (vector3::almost_equal(v1.position, v2.position)
-            && vector3::almost_equal(v1.normal, v2.normal)
-            && vector2::almost_equal(v1.uv, v2.uv)
+        if (almost_equal(v1.position, v2.position)
+            && almost_equal(v1.normal, v2.normal)
+            && almost_equal(v1.uv, v2.uv)
             && almost_equal(v1.color, v2.color))
         {
             return i;
@@ -177,10 +177,7 @@ static void add_vertex_to_mesh(Mesh* m, const Vector3& pos, const Vector3& norma
     m->vertices.add(v);
 }
 
-namespace obj
-{
-
-LoadedMesh load(Allocator* alloc, const char* filename)
+LoadedMesh obj_load(Allocator* alloc, const char* filename)
 {
     LoadedFile lf = file_load(alloc, filename);
 
@@ -201,6 +198,4 @@ LoadedMesh load(Allocator* alloc, const char* filename)
     }
 
     return {true, m};
-}
-
 }

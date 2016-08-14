@@ -3,19 +3,14 @@
 #include "key.h"
 #include "math.h"
 
-namespace window
-{
-
-typedef void(*KeyPressedCallback)(Key key);
-typedef void(*KeyReleasedCallback)(Key key);
-typedef void(*MouseMovedCalledback)(const Vector2i& delta);
-
-} // namespace window
+typedef void(*WindowKeyPressedCallback)(Key key);
+typedef void(*WindowKeyReleasedCallback)(Key key);
+typedef void(*WindowMouseMovedCalledback)(const Vector2i& delta);
 
 struct WindowState
 {
     bool closed;
-    window::KeyPressedCallback key_pressed_callback;
-    window::KeyReleasedCallback key_released_callback;
-    window::MouseMovedCalledback mouse_moved_callback;
+    WindowKeyPressedCallback key_pressed_callback;
+    WindowKeyReleasedCallback key_released_callback;
+    WindowMouseMovedCalledback mouse_moved_callback;
 };
