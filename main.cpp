@@ -136,7 +136,6 @@ static void process_input(Camera* camera)
 
 int main()
 {
-
     void* temp_memory_block = VirtualAlloc(nullptr, TempMemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     temp_memory_blob_init(temp_memory_block, TempMemorySize);
     

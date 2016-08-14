@@ -133,9 +133,11 @@ void temp_allocator_dealloc_all(Allocator* allocator)
 }
 
 #if defined(MEMORY_TRACING_ENABLE)
+static const unsigned max_captured_callstacks = 1024;
+
 static void add_captured_callstack(CapturedCallstack* callstacks, const CapturedCallstack& cc)
 {
-    for (unsigned i = 0; i < MaxCaputredCallstacks; ++i)
+    for (unsigned i = 0; i < max_captured_callstacks; ++i)
     {
         if (!callstacks[i].used)
         {
@@ -144,12 +146,12 @@ static void add_captured_callstack(CapturedCallstack* callstacks, const Captured
         }
     }
 
-    Error("Out of callstacks. Increase MaxCaputredCallstacks in memory.h.");
+    Error("Out of callstacks. Increase max_captured_callstacks in memory.h.");
 }
 
 static void remove_captured_callstack(CapturedCallstack* callstacks, void* p)
 {
-    for (unsigned i = 0; i < MaxCaputredCallstacks; ++i) {
+    for (unsigned i = 0; i < max_captured_callstacks; ++i) {
         if (callstacks[i].ptr == p)
         {
             callstacks[i].used = false;
@@ -162,7 +164,7 @@ static void remove_captured_callstack(CapturedCallstack* callstacks, void* p)
 
 static void ensure_captured_callstacks_unused(CapturedCallstack* callstacks)
 {
-    for (unsigned i = 0; i < MaxCaputredCallstacks; ++i)
+    for (unsigned i = 0; i < max_captured_callstacks; ++i)
     {
         if (!callstacks[i].used)
             continue;
@@ -180,10 +182,9 @@ void* heap_allocator_alloc(Allocator* allocator, unsigned size)
     #ifdef MEMORY_TRACING_ENABLE
         if (allocator->captured_callstacks == nullptr)
         {
-            unsigned cc_size = sizeof(CapturedCallstack) * MaxCaputredCallstacks;
+            unsigned cc_size = sizeof(CapturedCallstack) * max_captured_callstacks;
             allocator->captured_callstacks = (CapturedCallstack*)malloc(cc_size);
             memset(allocator->captured_callstacks, 0, cc_size);
-
         }
 
         add_captured_callstack(allocator->captured_callstacks, callstack_capture(1, p));

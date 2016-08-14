@@ -6,7 +6,6 @@
 
 #if defined(MEMORY_TRACING_ENABLE)
     #include "callstack_capturer.h"
-    #define MaxCaputredCallstacks 1024
 #endif
 
 struct Allocator
