@@ -108,7 +108,7 @@ void temp_allocator_dealloc(Allocator* allocator, void* ptr)
 {
     if (ptr == nullptr)
         return;
-    
+
     temp_memory_blob_dealloc(ptr);
 
     for (unsigned i = 0; i < allocator->num_allocations; ++i)
@@ -143,12 +143,89 @@ void temp_allocator_dealloc_all(Allocator* allocator)
     allocator->num_allocations = 0;
 }
 
+static void add_captured_callstack(CapturedCallstack* callstacks, const CapturedCallstack& cc)
+{
+    for (unsigned i = 0; i < MaxCaputredCallstacks; ++i)
+    {
+        if (!callstacks[i].used)
+        {
+            callstacks[i] = cc;
+            return;
+        }
+    }
+
+    Error("Out of callstacks. Increase MaxCaputredCallstacks in memory.h.");
+}
+
+static void remove_captured_callstack(CapturedCallstack* callstacks, void* p)
+{
+    for (unsigned i = 0; i < MaxCaputredCallstacks; ++i) {
+        if (callstacks[i].ptr == p)
+        {
+            callstacks[i].used = false;
+            return;
+        }
+    }
+
+    Error("Failed to find callstack in remove_captured_callstack.");
+}
+
+static void ensure_captured_callstacks_unused(CapturedCallstack* callstacks)
+{
+    for (unsigned i = 0; i < MaxCaputredCallstacks; ++i)
+    {
+        if (!callstacks[i].used)
+            continue;
+
+        callstack_print("Memory leak stack trace", callstacks + i);
+    }
+}
+
 void* heap_allocator_alloc(Allocator* allocator, unsigned size)
 {
-    return malloc(size);
+    ++allocator->num_allocations;
+    void* p = malloc(size);
+
+    #ifdef MEMORY_TRACING_ENABLE
+        add_captured_callstack(allocator->captured_callstacks, callstack_capture(1, p));
+    #endif
+
+    return p;
 }
 
 void heap_allocator_dealloc(Allocator* allocator, void* ptr)
 {
+    if (ptr == nullptr)
+        return;
+
+    #ifdef MEMORY_TRACING_ENABLE
+        remove_captured_callstack(allocator->captured_callstacks, ptr);
+    #endif
+
     free(ptr);
+    --allocator->num_allocations;
+}
+
+void heap_allocator_check_clean(Allocator* allocator)
+{
+    #ifdef MEMORY_TRACING_ENABLE
+        ensure_captured_callstacks_unused(allocator->captured_callstacks);
+    #endif
+
+    Assert(allocator->num_allocations == 0, "Heap allocator not clean on shutdown.");
+}
+
+Allocator create_heap_allocator()
+{
+    Allocator a = {};
+
+    #ifdef MEMORY_TRACING_ENABLE
+        unsigned cc_size = sizeof(CapturedCallstack) * MaxCaputredCallstacks;
+        a.captured_callstacks = (CapturedCallstack*)malloc(cc_size);
+        memset(a.captured_callstacks, 0, cc_size);
+    #endif
+
+    a.alloc_internal = heap_allocator_alloc;
+    a.dealloc_internal = heap_allocator_dealloc;
+    return a;
 }

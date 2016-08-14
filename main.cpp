@@ -163,6 +163,7 @@ int main()
         Mesh q = create_quad(&alloc);
         RRHandle tex = renderer.load_texture(pixels, PixelFormat::R8_UINT_NORM, 128, 128);
         RRHandle quad_geo = renderer.load_geometry(q.vertices.data, q.vertices.num, q.indices.data, q.indices.num);
+        mesh_destroy(&q);
         Object obj = {};
         obj.geometry_handle = quad_geo;
         obj.world_transform = matrix4x4_identity();
@@ -188,15 +189,18 @@ int main()
             keyboard_end_of_frame();
             mouse_end_of_frame();
         }
+
+        world_destroy(&w);
     }
     else
     {
-        bool run_lightmapper = false;
+        bool run_lightmapper = true;
         if (run_lightmapper)
         {
             World mapping_world = world_create(&alloc);
             create_test_world(&mapping_world, &renderer);
             run_radiosity_mapper(mapping_world, &renderer);
+            world_destroy(&mapping_world);
         }
 
         World world = world_create(&alloc);
@@ -220,9 +224,12 @@ int main()
             keyboard_end_of_frame();
             mouse_end_of_frame();
         }
+
+        world_destroy(&world);
     }
 
     renderer.shutdown();
+    heap_allocator_check_clean(&alloc);
 
     return 0;
 }

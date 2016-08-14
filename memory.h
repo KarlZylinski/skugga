@@ -2,6 +2,13 @@
 
 #include "types.h"
 
+//#define MEMORY_TRACING_ENABLE
+
+#if defined(MEMORY_TRACING_ENABLE)
+    #include "callstack_capturer.h"
+    #define MaxCaputredCallstacks 1024
+#endif
+
 struct Allocator
 {
     ~Allocator()
@@ -26,6 +33,10 @@ struct Allocator
     static const unsigned MaxAllocations = 128;
     void* allocations[MaxAllocations];
     unsigned num_allocations;
+
+    #if defined(MEMORY_TRACING_ENABLE)
+        CapturedCallstack* captured_callstacks;
+    #endif
 };
 
 static const unsigned DefaultMemoryAlign = 8;
@@ -45,6 +56,7 @@ void temp_allocator_dealloc_all(Allocator* allocator);
 
 void* heap_allocator_alloc(Allocator* allocator, unsigned size);
 void heap_allocator_dealloc(Allocator* allocator, void* ptr);
+void heap_allocator_check_clean(Allocator* allocator);
 
 inline Allocator create_temp_allocator()
 {
@@ -55,10 +67,4 @@ inline Allocator create_temp_allocator()
     return a;
 }
  
-inline Allocator create_heap_allocator()
-{
-    Allocator a = {};
-    a.alloc_internal = heap_allocator_alloc;
-    a.dealloc_internal = heap_allocator_dealloc;
-    return a;
-}
+Allocator create_heap_allocator();
