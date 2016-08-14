@@ -7,10 +7,7 @@
 #include "obj.h"
 #include "file.h"
 
-namespace
-{
-
-Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color, unsigned id, bool is_light)
+static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale, const Vector3& pos, const Color& color, unsigned id, bool is_light)
 {
     Vertex* scaled_vertices = m.vertices.clone_raw();
     memcpy(scaled_vertices, m.vertices.data, m.vertices.num * sizeof(Vertex));
@@ -30,10 +27,10 @@ Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale
     memcpy(&obj.world_transform.w.x, &pos.x, sizeof(Vector3));
 
     {
-        static wchar lightmap_filename[256];
-        wsprintf(lightmap_filename, L"%d.data", id);
+        static char lightmap_filename[256];
+        wsprintf(lightmap_filename, "%d.data", id);
         Allocator ta = create_temp_allocator();
-        LoadedFile f = file::load(&ta, lightmap_filename);
+        LoadedFile f = file_load(&ta, lightmap_filename);
 
         if (f.valid)
         {
@@ -47,16 +44,10 @@ Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3& scale
     return obj;
 }
 
-}
-
-namespace test_world
-{
-
-
-void create_world(World* world, Renderer* renderer)
+void create_test_world(World* world, Renderer* renderer)
 {
     Allocator ta = create_temp_allocator();
-    LoadedMesh lm = obj::load(&ta, L"box.wobj");
+    LoadedMesh lm = obj::load(&ta, "box.wobj");
 
     if (!lm.valid)
         return;
@@ -83,6 +74,4 @@ void create_world(World* world, Renderer* renderer)
     {
         world->objects.add(create_scaled_box(renderer, lm.mesh, {10, 10, 10}, {-20, 25, -19}, {1,1,1,1}, 10000, true));
     }
-}
-
 }

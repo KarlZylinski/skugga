@@ -180,9 +180,9 @@ static void add_vertex_to_mesh(Mesh* m, const Vector3& pos, const Vector3& norma
 namespace obj
 {
 
-LoadedMesh load(Allocator* alloc, const wchar* filename)
+LoadedMesh load(Allocator* alloc, const char* filename)
 {
-    LoadedFile lf = file::load(alloc, filename);
+    LoadedFile lf = file_load(alloc, filename);
 
     if (!lf.valid)
         return {false};

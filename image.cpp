@@ -1,14 +1,6 @@
 #include "image.h"
 #include "memory.h"
 
-namespace image
-{
-
-void init_data(Image* i, Allocator* alloc)
-{
-    i->data = (unsigned char*)alloc->alloc(size(i->pixel_format, i->width, i->height));
-}
-
 unsigned pixel_size(PixelFormat pf)
 {
     switch (pf)
@@ -28,14 +20,17 @@ unsigned pixel_size(PixelFormat pf)
     }
 }
 
-unsigned size(PixelFormat pf, unsigned size_x, unsigned size_y)
+void image_init_data(Image* i, Allocator* alloc)
+{
+    i->data = (unsigned char*)alloc->alloc(image_size(i->pixel_format, i->width, i->height));
+}
+
+unsigned image_size(PixelFormat pf, unsigned size_x, unsigned size_y)
 {
     return size_x * size_y * pixel_size(pf);
 }
 
-unsigned size(const Image& image)
+unsigned image_size(const Image& image)
 {
-    return size(image.pixel_format, image.width, image.height);
+    return image_size(image.pixel_format, image.width, image.height);
 }
-
-} // namespace image

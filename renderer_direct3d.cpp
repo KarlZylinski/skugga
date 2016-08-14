@@ -35,10 +35,19 @@ namespace
             return;
         }
 
-        static wchar_t msg[120];
-        wsprintf(msg, L"Error in renderer: %0x", res);
+        static char msg[120];
+        wsprintf(msg, "Error in renderer: %0x", res);
         MessageBox(nullptr, msg, nullptr, 0);
     }
+}
+
+Image image_from_render_target(const RenderTarget& rt)
+{
+    Image i = {};
+    i.width = rt.width;
+    i.height = rt.height;
+    i.pixel_format = rt.pixel_format;
+    return i;
 }
 
 void Renderer::init(void* window_handle)
@@ -142,7 +151,7 @@ namespace
     }
 }
 
-RRHandle Renderer::load_shader(const wchar* filename)
+RRHandle Renderer::load_shader(const char* filename)
 {
     unsigned handle = find_free_resource_handle();
 
@@ -153,10 +162,41 @@ RRHandle Renderer::load_shader(const wchar* filename)
     ID3DBlob* ps_blob = nullptr;
     ID3DBlob* error_blob = nullptr;
     HRESULT result;
-    result = D3DCompileFromFile(filename, 0, 0, "VShader", "vs_4_0", 0, 0, &vs_blob, &error_blob);
+
+    Allocator ta = create_temp_allocator();
+    LoadedFile shader_file = file_load(&ta, filename);
+
+    if (!shader_file.valid)
+        return {InvalidHandle};
+
+    result = D3DCompile(
+        shader_file.file.data,
+        shader_file.file.size,
+        nullptr,
+        nullptr,
+        nullptr,
+        "VShader",
+        "vs_4_0",
+        0,
+        0,
+        &vs_blob,
+        &error_blob
+    );
     if (FAILED(result))
         check_shader_error(error_blob);
-    result = D3DCompileFromFile(filename, 0, 0, "PShader", "ps_4_0", 0, 0, &ps_blob, &error_blob);
+    result = D3DCompile(
+        shader_file.file.data,
+        shader_file.file.size,
+        nullptr,
+        nullptr,
+        nullptr,
+        "PShader",
+        "ps_4_0",
+        0,
+        0,
+        &ps_blob,
+        &error_blob
+    );
     if (FAILED(result))
         check_shader_error(error_blob);
     Shader s = {};
@@ -580,8 +620,8 @@ RRHandle Renderer::load_texture(void* data, PixelFormat pf, unsigned width, unsi
 
     D3D11_SUBRESOURCE_DATA init_data;
     init_data.pSysMem = data;
-    init_data.SysMemPitch = width * image::pixel_size(pf);
-    init_data.SysMemSlicePitch = image::size(pf, width, height);
+    init_data.SysMemPitch = width * pixel_size(pf);
+    init_data.SysMemSlicePitch = image_size(pf, width, height);
 
     ID3D11Texture2D* tex;
     if (device->CreateTexture2D(&desc, &init_data, &tex) != S_OK)

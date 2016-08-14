@@ -9,18 +9,18 @@
 #include "keyboard.h"
 #include "mouse.h"
 #include "file.h"
-#include "lightmapper.h"
+#include "radiosity_mapper.h"
 #include "test_world.h"
 #include "mesh.h"
 
 static void key_pressed_callback(Key key)
 {
-    keyboard::pressed(key);
+    keyboard_pressed(key);
 }
 
 static void key_released_callback(Key key)
 {
-    keyboard::released(key);
+    keyboard_released(key);
 }
 
 static void mouse_moved_callback(const Vector2i& delta)
@@ -102,19 +102,19 @@ static void process_input(Camera* camera)
 {
     Matrix4x4 move = matrix4x4::identity();
 
-    if (keyboard::is_held(Key::W))
+    if (key_is_held(Key::W))
     {
         move.w.z += 0.0005f;
     }
-    if (keyboard::is_held(Key::S))
+    if (key_is_held(Key::S))
     {
         move.w.z -= 0.0005f;
     }
-    if (keyboard::is_held(Key::A))
+    if (key_is_held(Key::A))
     {
         move.w.x -= 0.0005f;
     }
-    if (keyboard::is_held(Key::D))
+    if (key_is_held(Key::D))
     {
         move.w.x += 0.0005f;
     }
@@ -140,12 +140,12 @@ int main()
     void* temp_memory_block = VirtualAlloc(nullptr, temp_memory::TempMemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     temp_memory::init(temp_memory_block, temp_memory::TempMemorySize);
     
-    windows::Window window = {};
-    windows::window::init(&window);
+    WindowsWindow window = {};
+    create_window(&window);
     Renderer renderer = {};
     renderer.init(window.handle);
 
-    keyboard::init();
+    keyboard_init();
     mouse::init();
     window.state.key_released_callback = key_released_callback;
     window.state.key_pressed_callback = key_pressed_callback;
@@ -176,16 +176,16 @@ int main()
 
         renderer.disable_scissor();
         renderer.set_render_target(&renderer.back_buffer);
-        RRHandle default_shader = renderer.load_shader(L"single_channel_tex.shader");
+        RRHandle default_shader = renderer.load_shader("single_channel_tex.shader");
         renderer.set_shader(default_shader);
 
         while(!window.state.closed)
         {
-            windows::window::process_all_messsages();
+            process_all_window_messsages();
             renderer.pre_draw_frame();
             renderer.draw_frame(w, c, DrawLights::DrawLights);
             renderer.present();
-            keyboard::end_of_frame();
+            keyboard_end_of_frame();
             mouse::end_of_frame();
         }
     }
@@ -195,29 +195,29 @@ int main()
         if (run_lightmapper)
         {
             World mapping_world = world_create(&alloc);
-            test_world::create_world(&mapping_world, &renderer);
-            lightmapper::map(mapping_world, &renderer);
+            create_test_world(&mapping_world, &renderer);
+            run_radiosity_mapper(mapping_world, &renderer);
         }
 
         World world = world_create(&alloc);
-        test_world::create_world(&world, &renderer);
+        create_test_world(&world, &renderer);
         Camera camera = camera_create_projection();
 
         //simulation.camera.rotation = quaternion::normalize(quaternion::from_axis_angle({0,1,0}, -PI/2) * quaternion::look_at({0,0,0},{-1,0,0}));
         //quaternion::look_at(vector3::zero, vector3::lookdir);
         renderer.disable_scissor();
         renderer.set_render_target(&renderer.back_buffer);
-        RRHandle default_shader = renderer.load_shader(L"shader.shader");
+        RRHandle default_shader = renderer.load_shader("shader.shader");
         renderer.set_shader(default_shader);
 
         while(!window.state.closed)
         {
-            windows::window::process_all_messsages();
+            process_all_window_messsages();
             process_input(&camera);
             renderer.pre_draw_frame();
             renderer.draw_frame(world, camera, DrawLights::DrawLights);
             renderer.present();
-            keyboard::end_of_frame();
+            keyboard_end_of_frame();
             mouse::end_of_frame();
         }
     }

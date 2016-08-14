@@ -1,12 +1,10 @@
-#include "lightmapper.h"
+#include "radiosity_mapper.h"
 #include "renderer_direct3d.h"
 #include "file.h"
 #include "windows_window.h"
 #include "rect.h"
 #include "keyboard.h"
-
-namespace lightmapper
-{
+#include "stdio.h"
 
 struct Patch
 {
@@ -30,7 +28,7 @@ static const Rect scissor_bottom = {0, LightmapSize/2, LightmapSize, LightmapSiz
 static const Rect scissor_left = {0, 0, LightmapSize/2, LightmapSize};
 static const Rect scissor_right = {LightmapSize/2, 0, LightmapSize, LightmapSize};
 
-ColorRGB draw_hemicube_side(Renderer* renderer, const World& world, const Rect& scissor_rect,
+static ColorRGB draw_hemicube_side(Renderer* renderer, const World& world, const Rect& scissor_rect,
     const Camera& camera, const RenderTarget& light_contrib_texture, Patch* patches)
 {
     renderer->set_scissor_rect(scissor_rect);
@@ -50,18 +48,18 @@ ColorRGB draw_hemicube_side(Renderer* renderer, const World& world, const Rect& 
     return total_light;
 }
 
-void map(World& world, Renderer* renderer)
+void run_radiosity_mapper(World& world, Renderer* renderer)
 {
-    RRHandle vertex_data_shader = renderer->load_shader(L"uv_data.shader");
-    RRHandle light_contribution_shader = renderer->load_shader(L"light_contribution_calc.shader");
+    RRHandle vertex_data_shader = renderer->load_shader("uv_data.shader");
+    RRHandle light_contribution_shader = renderer->load_shader("light_contribution_calc.shader");
     RenderTarget vertex_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT, LightmapSize, LightmapSize);
     RenderTarget normals_texture = renderer->create_render_texture(PixelFormat::R32G32B32A32_FLOAT, LightmapSize, LightmapSize);
     RenderTarget* vertex_data_rts[] = {&vertex_texture, &normals_texture};
     RenderTarget light_contrib_texture = renderer->create_render_texture(PixelFormat::R32_UINT, LightmapSize, LightmapSize);
     
     Allocator ta = create_temp_allocator();
-    Image light_contrib_image = {LightmapSize, LightmapSize, light_contrib_texture.pixel_format};
-    image::init_data(&light_contrib_image, &ta);
+    Image light_contrib_image = image_from_render_target(light_contrib_texture);
+    image_init_data(&light_contrib_image, &ta);
 
     unsigned num_pixels = LightmapSize * LightmapSize;
     DynamicArray<Patch> patches = {&ta};
@@ -156,9 +154,9 @@ void map(World& world, Renderer* renderer)
         for (unsigned patch_index = 0; patch_index < patches.num; ++patch_index)
         {
             Patch& p = patches[patch_index];
-            windows::window::process_all_messsages();
+            process_all_window_messsages();
 
-            if (keyboard::is_presssed(Key::Escape))
+            if (key_is_presssed(Key::Escape))
             {
                 return;
             }
@@ -181,9 +179,12 @@ void map(World& world, Renderer* renderer)
         }
     }
 
-    Image lightmap = {LightmapSize, LightmapSize, PixelFormat::R8G8B8A8_UINT_NORM};
-    image::init_data(&lightmap, &ta);
-    unsigned lightmap_size = image::size(lightmap);
+    Image lightmap = {};
+    lightmap.width = LightmapSize;
+    lightmap.height = LightmapSize;
+    lightmap.pixel_format = PixelFormat::R8G8B8A8_UINT_NORM;
+    image_init_data(&lightmap, &ta);
+    unsigned lightmap_size = image_size(lightmap);
     for (unsigned obj_index = 0; obj_index < world.objects.num; ++obj_index)
     {
         memset(lightmap.data, 0, lightmap_size);
@@ -199,13 +200,8 @@ void map(World& world, Renderer* renderer)
             out_color.a = 255;
         }
 
-        File lightmap_file;
-        lightmap_file.data = lightmap.data;
-        lightmap_file.size = lightmap_size;
-        wchar filename[10];
-        wsprintf(filename, L"%d.data", world.objects[obj_index].id);
-        file::write(lightmap_file, filename);
+        char filename[10];
+        sprintf(filename, "%d.data", world.objects[obj_index].id);
+        file_write(lightmap.data, lightmap_size, filename);
     }
-}
-
 }

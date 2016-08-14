@@ -2,15 +2,11 @@
 
 #include "key.h"
 
-namespace keyboard
-{
+void keyboard_init();
+void keyboard_pressed(Key key);
+void keyboard_released(Key key);
+void keyboard_end_of_frame();
 
-void init();
-bool is_held(Key key);
-bool is_presssed(Key key);
-bool is_released(Key key);
-void pressed(Key key);
-void released(Key key);
-void end_of_frame();
-
-}
+bool key_is_held(Key key);
+bool key_is_presssed(Key key);
+bool key_is_released(Key key);

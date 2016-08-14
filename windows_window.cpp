@@ -117,7 +117,7 @@ static Key key_from_windows_key_code(WPARAM key, LPARAM flags)
 
 static LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPARAM lparam)
 {
-    windows::Window* window = (windows::Window*)GetWindowLongPtr(window_handle, GWLP_USERDATA);
+    WindowsWindow* window = (WindowsWindow*)GetWindowLongPtr(window_handle, GWLP_USERDATA);
 
     if (window == nullptr)
         return DefWindowProc(window_handle, message, wparam, lparam);
@@ -166,13 +166,7 @@ static LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPAR
     return DefWindowProc(window_handle, message, wparam, lparam);
 }
 
-namespace windows
-{
-
-namespace window
-{
-
-void init(Window* w)
+void create_window(WindowsWindow* w)
 {
     HINSTANCE instance_handle = GetModuleHandle(nullptr);
     WNDCLASSEX wc = {0};
@@ -182,15 +176,15 @@ void init(Window* w)
     wc.hInstance = instance_handle;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-    wc.lpszClassName = L"Skugga";
+    wc.lpszClassName = "Skugga";
     w->window_class = wc;
     RegisterClassEx(&w->window_class);
     RECT window_rect = {0, 0, WindowWidth, WindowHeight};
     AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
     w->handle = CreateWindowEx(
         0,
-        L"Skugga",
-        L"Skugga",
+        "Skugga",
+        "Skugga",
         WS_OVERLAPPEDWINDOW,
         300,
         300,
@@ -209,7 +203,7 @@ void init(Window* w)
     RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE));
 }
 
-void process_all_messsages()
+void process_all_window_messsages()
 {
     MSG message;
     while(PeekMessage(&message, nullptr, 0, 0, PM_REMOVE))
@@ -218,7 +212,3 @@ void process_all_messsages()
         DispatchMessage(&message);
     }
 }
-
-} // namespace window
-
-} // namespace windows

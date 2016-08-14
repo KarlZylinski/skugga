@@ -14,10 +14,5 @@ struct LoadedFile
     File file;
 };
 
-namespace file
-{
-
-LoadedFile load(Allocator* alloc, const wchar* filename);
-bool write(const File& file, const wchar* filename);
-
-} // namespace file
+LoadedFile file_load(Allocator* alloc, const char* filename);
+bool file_write(void* data, unsigned size, const char* filename);

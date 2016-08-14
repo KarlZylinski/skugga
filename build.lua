@@ -70,7 +70,7 @@ if build then
     for _, filename in ipairs(files_to_build) do
         local object_filename = "build\\" .. string.replace_end(filename, 3, "o")
 
-        local build_cmd = "cl.exe /FI types.h /FI helpers.h /D _HAS_EXCEPTIONS=0 /nologo /DUNICODE /W4 /WX /Gm /EHsc /TP /wd4505 /wd4201 /wd4100 /c /D _CRT_SECURE_NO_WARNINGS /Zi /MTd " .. extra_compile_opts .. " /Fo" .. object_filename .. " " .. filename
+        local build_cmd = "cl.exe /FI types.h /FI helpers.h /D _HAS_EXCEPTIONS=0 /nologo /W4 /WX /Gm /EHsc /TP /wd4505 /wd4201 /wd4100 /c /D _CRT_SECURE_NO_WARNINGS /Zi /MTd " .. extra_compile_opts .. " /Fo" .. object_filename .. " " .. filename
         run_or_die(build_cmd)
         object_files = object_files .. object_filename .. " "
     end

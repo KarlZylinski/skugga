@@ -43,7 +43,6 @@ inline ColorRGB operator+(const ColorRGB& c1, const ColorRGB& c2)
     };
 }
 
-
 inline ColorRGB operator*(const ColorRGB& c, float s)
 {
     return

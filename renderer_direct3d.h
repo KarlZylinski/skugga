@@ -46,6 +46,8 @@ struct RenderTarget
     RRHandle render_resource;
 };
 
+Image image_from_render_target(const RenderTarget& rt);
+
 struct RenderTargetResource
 {
     ID3D11Texture2D* texture;
@@ -102,7 +104,7 @@ struct Renderer
 {
     void init(void* window_handle);
     void shutdown();
-    RRHandle load_shader(const wchar* filename);
+    RRHandle load_shader(const char* filename);
     void set_shader(RRHandle shader);
     RenderTarget create_back_buffer();
     RenderTarget create_render_texture(PixelFormat pf, unsigned width, unsigned height);

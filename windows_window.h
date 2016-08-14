@@ -2,21 +2,12 @@
 #include <windows.h>
 #include "window_state.h"
 
-namespace windows
-{
-
-struct Window
+struct WindowsWindow
 {
     HWND handle;
     WNDCLASSEX window_class;
     WindowState state;
 };
 
-namespace window
-{
-
-void init(Window* w);
-void process_all_messsages();
-
-}
-}
+void create_window(WindowsWindow* w);
+void process_all_window_messsages();

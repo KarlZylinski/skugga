@@ -2,12 +2,9 @@
 #include <stdio.h>
 #include "memory.h"
 
-namespace file
+LoadedFile file_load(Allocator* alloc, const char* filename)
 {
-
-LoadedFile load(Allocator* alloc, const wchar* filename)
-{
-    FILE* file_handle = _wfopen(filename, L"rb");
+    FILE* file_handle = fopen(filename, "rb");
 
     if (file_handle == nullptr)
         return {false};
@@ -32,16 +29,14 @@ LoadedFile load(Allocator* alloc, const wchar* filename)
     return {true, file};
 }
 
-bool write(const File& file, const wchar* filename)
+bool file_write(void* data, unsigned size, const char* filename)
 {
-    FILE* file_handle = _wfopen(filename, L"wb");
+    FILE* file_handle = fopen(filename, "wb");
 
     if (file_handle == nullptr)
         return false;
 
-    fwrite(file.data, 1, file.size, file_handle);
+    fwrite(data, 1, size, file_handle);
     fclose(file_handle);
     return true;
 }
-
-} // namespace file
