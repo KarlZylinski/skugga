@@ -24,14 +24,16 @@ int main()
         Allocator ta1 = create_temp_allocator();
         unsigned s = 128;
         unsigned char* p1 = (unsigned char*)ta1.alloc(s);
-        memset(p1, 0xaa, s);
-        Allocator ta2 = create_temp_allocator();
-        unsigned char* p2 = (unsigned char*)ta2.alloc(s);
-        memset(p2, 0xbb, s);
+        memset(p1, 0xff, s);
+        {
+            Allocator ta2 = create_temp_allocator();
+            unsigned char* p2 = (unsigned char*)ta2.alloc(s);
+            memset(p2, 0xfe, s);
+        }
         unsigned char* p3 = (unsigned char*)ta1.alloc(s);
-        memset(p3, 0xcc, s);
+        memset(p3, 0xfd, s);
         unsigned char* p4 = (unsigned char*)ta1.alloc(s);
-        memset(p4, 0xdd, s);
+        memset(p4, 0xfc, s);
     }
 
     assert(tms.head == tms.start);

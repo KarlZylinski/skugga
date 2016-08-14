@@ -49,20 +49,17 @@ struct TempMemoryHeader
 {
     bool freed;
     TempMemoryHeader* prev;
-    TempMemoryHeader* next_for_allocator;
+    TempMemoryHeader* prev_for_allocator;
     unsigned size;
 };
 
-void* temp_memory_blob_alloc(unsigned size, TempMemoryHeader* allocator_latest, unsigned align)
+static void* temp_memory_blob_alloc(unsigned size, TempMemoryHeader* allocator_latest, unsigned align)
 {
     Assert(mem_ptr_diff(tms.start, tms.head + align + size + sizeof(TempMemoryHeader)) < tms.capacity, "Out of temp memory");
     TempMemoryHeader* tmh = (TempMemoryHeader*)mem_align_forward(tms.head, align);
     tmh->freed = false;
     tmh->size = size + align;
-    tmh->next_for_allocator = nullptr;
-
-    if (allocator_latest != nullptr)
-        allocator_latest->next_for_allocator = tmh;
+    tmh->prev_for_allocator = allocator_latest;
     
     if (tms.head == tms.start)
         tmh->prev = nullptr;
@@ -79,7 +76,7 @@ void* temp_memory_blob_alloc(unsigned size, TempMemoryHeader* allocator_latest, 
     return mem_ptr_add(tmh, sizeof(TempMemoryHeader));
 }
 
-void temp_memory_blob_dealloc(void* ptr)
+static void temp_memory_blob_dealloc(void* ptr)
 {
     if (ptr == nullptr)
         return;
@@ -87,15 +84,12 @@ void temp_memory_blob_dealloc(void* ptr)
     TempMemoryHeader* tmh = (TempMemoryHeader*)mem_ptr_sub(ptr, sizeof(TempMemoryHeader));
     tmh->freed = true;
 
+    TempMemoryHeader* free_for_alloc = tmh;
     // Free all blocks for the allocator that owns it.
-    while (tmh != nullptr)
+    while (free_for_alloc != nullptr)
     {
-        tmh->freed = true;
-
-        if (tmh->next_for_allocator == nullptr)
-            break;
-
-        tmh = tmh->next_for_allocator;
+        free_for_alloc->freed = true;
+        free_for_alloc = free_for_alloc->prev_for_allocator;
     }
 
     // We did not end up at last block. Just quit. Some other dealloaction will trigger the rewind.
@@ -106,9 +100,10 @@ void temp_memory_blob_dealloc(void* ptr)
     while (tmh != nullptr && tmh->freed)
         tmh = tmh->prev;
 
+    // If tmh is null, then we arrived at start of memory
     tms.head = tmh == nullptr
         ? tms.head = tms.start
-        : (unsigned char*)mem_ptr_add(tmh, tmh->size);
+        : (unsigned char*)mem_ptr_add(tmh, tmh->size + sizeof(TempMemoryHeader));
 }
 
 void* temp_allocator_alloc(Allocator* allocator, unsigned size)
@@ -122,7 +117,6 @@ void* temp_allocator_alloc(Allocator* allocator, unsigned size)
     );
     Assert(p != nullptr, "Failed to allocate memory.");
     allocator->last_alloc = p;
-    allocator->first_alloc = allocator->first_alloc == nullptr ? p : allocator->first_alloc;
     return p;
 }
 
@@ -132,10 +126,10 @@ void temp_allocator_dealloc(Allocator* allocator, void* ptr)
 
 void temp_allocator_dealloc_all(Allocator* allocator)
 {
-    if (allocator->first_alloc == nullptr)
+    if (allocator->last_alloc == nullptr)
         return;
 
-    temp_memory_blob_dealloc(allocator->first_alloc);
+    temp_memory_blob_dealloc(allocator->last_alloc);
 }
 
 #if defined(MEMORY_TRACING_ENABLE)
@@ -184,6 +178,14 @@ void* heap_allocator_alloc(Allocator* allocator, unsigned size)
     void* p = malloc(size);
 
     #ifdef MEMORY_TRACING_ENABLE
+        if (allocator->captured_callstacks == nullptr)
+        {
+            unsigned cc_size = sizeof(CapturedCallstack) * MaxCaputredCallstacks;
+            allocator->captured_callstacks = (CapturedCallstack*)malloc(cc_size);
+            memset(allocator->captured_callstacks, 0, cc_size);
+
+        }
+
         add_captured_callstack(allocator->captured_callstacks, callstack_capture(1, p));
     #endif
 
@@ -210,29 +212,4 @@ void heap_allocator_check_clean(Allocator* allocator)
     #endif
 
     Assert(allocator->num_allocations == 0, "Heap allocator not clean on shutdown.");
-}
-
-Allocator create_temp_allocator()
-{
-    Allocator a = {};
-    a.alloc_internal = temp_allocator_alloc;
-    a.dealloc_internal = temp_allocator_dealloc;
-    a.out_of_scope = temp_allocator_dealloc_all;
-    return a;
-}
-
-
-Allocator create_heap_allocator()
-{
-    Allocator a = {};
-
-    #ifdef MEMORY_TRACING_ENABLE
-        unsigned cc_size = sizeof(CapturedCallstack) * MaxCaputredCallstacks;
-        a.captured_callstacks = (CapturedCallstack*)malloc(cc_size);
-        memset(a.captured_callstacks, 0, cc_size);
-    #endif
-
-    a.alloc_internal = heap_allocator_alloc;
-    a.dealloc_internal = heap_allocator_dealloc;
-    return a;
 }
