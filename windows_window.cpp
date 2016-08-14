@@ -169,7 +169,7 @@ static LRESULT window_proc(HWND window_handle, UINT message, WPARAM wparam, LPAR
 void create_window(WindowsWindow* w)
 {
     HINSTANCE instance_handle = GetModuleHandle(nullptr);
-    WNDCLASSEX wc = {0};
+    WNDCLASSEX wc = {};
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = window_proc;
@@ -196,7 +196,7 @@ void create_window(WindowsWindow* w)
         nullptr);
     ShowWindow(w->handle, true);
     SetWindowLongPtr(w->handle, GWLP_USERDATA, (LONG_PTR)w);
-    RAWINPUTDEVICE rid = {0};
+    RAWINPUTDEVICE rid = {};
     rid.usUsagePage = 0x01; 
     rid.usUsage = 0x02; 
     rid.hwndTarget = 0;

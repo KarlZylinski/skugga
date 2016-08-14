@@ -111,10 +111,10 @@ static ParsedData parse(Allocator* alloc, unsigned char* data, unsigned data_siz
     ps.head = data;
     ps.end = (unsigned char*)mem_ptr_add(data, data_size);
     ParsedData pd = {};
-    pd.vertices = {alloc};
-    pd.normals = {alloc};
-    pd.uvs = {alloc};
-    pd.faces = {alloc};
+    pd.vertices = dynamic_array_create<Vector3>(alloc);
+    pd.normals = dynamic_array_create<Vector3>(alloc);
+    pd.uvs = dynamic_array_create<Vector2>(alloc);
+    pd.faces = dynamic_array_create<ParsedFace>(alloc);
     ps.head = ps.data;
 
     while (ps.head < ps.end)
@@ -186,8 +186,8 @@ LoadedMesh obj_load(Allocator* alloc, const char* filename)
 
     ParsedData pd = parse(alloc, lf.file.data, lf.file.size);
     Mesh m = {};
-    m.vertices = {alloc};
-    m.indices = {alloc};
+    m.vertices = dynamic_array_create<Vertex>(alloc);
+    m.indices = dynamic_array_create<unsigned>(alloc);
 
     for (unsigned i = 0; i < pd.faces.num; ++i)
     {

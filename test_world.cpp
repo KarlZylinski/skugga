@@ -19,7 +19,7 @@ static Object create_scaled_box(Renderer* renderer, const Mesh& m, const Vector3
     }
 
     RRHandle box_geometry_handle = renderer->load_geometry(scaled_vertices, m.vertices.num, m.indices.data, m.indices.num);
-    Object obj = {0};
+    Object obj = {};
     obj.geometry_handle = box_geometry_handle;
     obj.world_transform = matrix4x4_identity();
     obj.id = id;

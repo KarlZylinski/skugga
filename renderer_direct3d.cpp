@@ -74,7 +74,7 @@ void Renderer::init(void* window_handle)
         &device_context
     ));
 
-    D3D11_BUFFER_DESC cbd = {0};
+    D3D11_BUFFER_DESC cbd = {};
     cbd.ByteWidth = sizeof(ConstantBuffer);
     cbd.Usage = D3D11_USAGE_DYNAMIC;
     cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -82,7 +82,7 @@ void Renderer::init(void* window_handle)
     cbd.MiscFlags = 0;
     cbd.StructureByteStride = 0;
     device->CreateBuffer(&cbd, nullptr, &constant_buffer);
-    D3D11_TEXTURE2D_DESC dstd = {0};
+    D3D11_TEXTURE2D_DESC dstd = {};
     dstd.Width = WindowWidth;
     dstd.Height = WindowHeight;
     dstd.MipLevels = 1;
@@ -343,19 +343,19 @@ RRHandle Renderer::load_geometry(Vertex* vertices, unsigned num_vertices, unsign
 
     ID3D11Buffer* vertex_buffer;
     {
-        D3D11_BUFFER_DESC bd = {0};
+        D3D11_BUFFER_DESC bd = {};
         bd.Usage = D3D11_USAGE_DYNAMIC;
         bd.ByteWidth = sizeof(Vertex) * num_vertices;
         bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
         bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        D3D11_SUBRESOURCE_DATA srd = {0};
+        D3D11_SUBRESOURCE_DATA srd = {};
         srd.pSysMem = vertices;
         device->CreateBuffer(&bd, &srd, &vertex_buffer);
     }
 
     ID3D11Buffer* index_buffer;
     {
-        D3D11_BUFFER_DESC bd = {0};
+        D3D11_BUFFER_DESC bd = {};
         bd.Usage = D3D11_USAGE_DYNAMIC;
         bd.ByteWidth = sizeof(unsigned) * num_indices;
         bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -365,7 +365,7 @@ RRHandle Renderer::load_geometry(Vertex* vertices, unsigned num_vertices, unsign
         device->CreateBuffer(&bd, &srd, &index_buffer);
     }
 
-    Geometry g = {0};
+    Geometry g = {};
     g.vertices = vertex_buffer;
     g.indices = index_buffer;
     g.num_indices = num_indices;

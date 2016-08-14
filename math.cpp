@@ -224,7 +224,7 @@ Matrix4x4 matrix4x4_from_rotation_and_translation(const Quaternion& q, const Vec
         wy = w * y2,
         wz = w * z2;
 
-    Matrix4x4 out = {0};
+    Matrix4x4 out = {};
     out.x.x = 1 - (yy + zz);
     out.x.y = xy + wz;
     out.x.z = xz - wy;

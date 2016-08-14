@@ -63,7 +63,8 @@ struct DynamicArray
     DynamicArray<T> clone(Allocator* new_allocator = nullptr) const
     {
         Allocator* allocator_to_use = new_allocator == nullptr ? allocator : new_allocator;
-        DynamicArray<T> c = {allocator_to_use};
+        DynamicArray<T> c = {};
+        c.allocator = allocator_to_use;
         c.data = (T*)allocator_to_use->alloc(num * sizeof(T));
         c.capacity = num;
         c.num = num;

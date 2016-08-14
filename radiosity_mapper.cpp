@@ -62,7 +62,7 @@ void run_radiosity_mapper(World& world, Renderer* renderer)
     image_init_data(&light_contrib_image, &ta);
 
     unsigned num_pixels = LightmapSize * LightmapSize;
-    DynamicArray<Patch> patches = {&ta};
+    DynamicArray<Patch> patches = dynamic_array_create<Patch>(&ta);
     unsigned pbo_size = sizeof(DynamicArray<unsigned>) * world.objects.num;
     DynamicArray<unsigned>* patches_by_objects = (DynamicArray<unsigned>*)ta.alloc(pbo_size);
     memset(patches_by_objects, 0, pbo_size);
