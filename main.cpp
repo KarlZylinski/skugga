@@ -139,7 +139,12 @@ static void process_input(Camera* camera)
 int main()
 {
     void* temp_memory_block = VirtualAlloc(nullptr, TempMemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    Assert(temp_memory_block != nullptr, "Failed allocating temp memory.");
     temp_memory_blob_init(temp_memory_block, TempMemorySize);
+
+    void* permanent_memory_block = VirtualAlloc(nullptr, PermanentMemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    Assert(permanent_memory_block != nullptr, "Failed allocating permanent memory.");
+    permanent_memory_blob_init(permanent_memory_block, PermanentMemorySize);
     
     WindowsWindow window = {};
     create_window(&window);
@@ -153,7 +158,7 @@ int main()
     window.state.mouse_moved_callback = mouse_moved_callback;
     Allocator alloc = create_heap_allocator();
 
-    bool render_fullscreen_quad = false;
+    bool render_fullscreen_quad = true;
     if (render_fullscreen_quad) {
         unsigned s = 128;
         unsigned num_pixels = 128*128;

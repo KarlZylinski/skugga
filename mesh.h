@@ -1,6 +1,6 @@
 #pragma once
 #include "dynamic_array.h"
-#include "renderer.h"
+#include "vertex.h"
 
 struct Mesh
 {

@@ -41,9 +41,12 @@ void* mem_ptr_add(void* ptr1, unsigned offset);
 void* mem_ptr_sub(void* ptr1, unsigned offset);
 void* mem_align_forward(void* p, unsigned align);
 
-void temp_memory_blob_init(void* start, unsigned capacity);
-const unsigned TempMemorySize = 1024 * 1024 * 1024;
+void permanent_memory_blob_init(void* start, unsigned capacity);
+const unsigned PermanentMemorySize = 32 * 1024 * 1024;
+void* permanent_alloc(unsigned size, unsigned align = DefaultMemoryAlign);
 
+const unsigned TempMemorySize = 1024 * 1024 * 1024;
+void temp_memory_blob_init(void* start, unsigned capacity);
 void* temp_allocator_alloc(Allocator* allocator, unsigned size);
 void temp_allocator_dealloc(Allocator* allocator, void* ptr);
 void temp_allocator_dealloc_all(Allocator* allocator);

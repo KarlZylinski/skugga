@@ -28,6 +28,31 @@ void* mem_align_forward(void* p, unsigned align)
     return (void *)pi;
 }
 
+struct PermanentMemoryStorage
+{
+    unsigned char* start;
+    unsigned char* head;
+    unsigned capacity;
+};
+
+static PermanentMemoryStorage pms;
+
+void permanent_memory_blob_init(void* start, unsigned capacity)
+{
+    memzero(&pms, PermanentMemorySize);
+    pms.start = (unsigned char*)start;
+    pms.head = pms.start;
+    pms.capacity = capacity;
+}
+
+void* permanent_alloc(unsigned size, unsigned align)
+{
+    Assert(mem_ptr_diff(pms.start, pms.head) + size + align <= pms.capacity, "Out of permanent memory.");
+    void* p = mem_align_forward(pms.head, align);
+    pms.head += size + align;
+    return p;
+}
+
 struct TempMemoryStorage
 {
     unsigned char* start;

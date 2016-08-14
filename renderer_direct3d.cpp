@@ -1,13 +1,68 @@
 #include "renderer_direct3d.h"
 #include <d3d11.h>
 #include <D3Dcompiler.h>
-#include "renderer.h"
+#include "vertex.h"
 #include "world.h"
 #include "config.h"
 #include "rect.h"
 #include "file.h"
 #include "camera.h"
 #include "memory.h"
+
+struct RenderTargetResource
+{
+    ID3D11Texture2D* texture;
+    ID3D11RenderTargetView* view;
+};
+
+struct ConstantBuffer
+{
+    Matrix4x4 model_view_projection;
+    Matrix4x4 model;
+    Matrix4x4 projection;
+};
+
+struct Geometry {
+    ID3D11Buffer* vertices;
+    ID3D11Buffer* indices;
+    unsigned num_indices;
+};
+
+struct Texture
+{
+    ID3D11Texture2D* resource;
+    ID3D11ShaderResourceView* view;
+};
+
+struct Shader
+{
+    ID3D11VertexShader* vertex_shader;
+    ID3D11PixelShader* pixel_shader;
+    ID3D11InputLayout* input_layout;
+    ID3D11SamplerState* sampler_state;
+};
+
+enum struct RenderResourceType
+{
+    Unused,
+    Geometry,
+    Texture,
+    Shader,
+    RenderTarget,
+    MappedTexture
+};
+
+struct RenderResource
+{
+    RenderResourceType type;
+    union 
+    {
+        Geometry geometry;
+        Texture texture;
+        Shader shader;
+        RenderTargetResource render_target;
+    };
+};
 
 static DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
 {
@@ -52,6 +107,7 @@ Image image_from_render_target(const RenderTarget& rt)
 
 void Renderer::init(void* window_handle)
 {
+    resources = (RenderResource*)permanent_alloc(max_resources * sizeof(RenderResource));
     DXGI_SWAP_CHAIN_DESC scd = {};
     scd.BufferCount = 1;
     scd.BufferDesc.Width = WindowWidth;
@@ -126,7 +182,7 @@ void Renderer::init(void* window_handle)
 
 void Renderer::shutdown()
 {
-    for (unsigned i = 0; i < num_resources; ++ i)
+    for (unsigned i = 0; i < max_resources; ++ i)
     {
         if (resources[i].type != RenderResourceType::Unused)
             unload_resource({i});
@@ -316,7 +372,7 @@ RenderTarget Renderer::create_render_texture(PixelFormat pf, unsigned width, uns
     return rt;
 }
 
-void Renderer::set_constant_buffers(const ConstantBuffer& data)
+static void set_constant_buffers(ID3D11DeviceContext* device_context, ID3D11Buffer* constant_buffer, const ConstantBuffer& data)
 {
     D3D11_MAPPED_SUBRESOURCE ms_constant_buffer;
     device_context->Map(constant_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms_constant_buffer);
@@ -326,7 +382,7 @@ void Renderer::set_constant_buffers(const ConstantBuffer& data)
 
 unsigned Renderer::find_free_resource_handle() const
 {
-    for (unsigned i = 1; i < num_resources; ++i)
+    for (unsigned i = 1; i < max_resources; ++i)
     {
         if (resources[i].type == RenderResourceType::Unused)
         {
@@ -459,7 +515,7 @@ void Renderer::draw(const Object& object, const Matrix4x4& view_matrix, const Ma
     constant_buffer_data.model_view_projection = object.world_transform * view_matrix * projection_matrix;
     constant_buffer_data.model = object.world_transform;
     constant_buffer_data.projection = projection_matrix;
-    set_constant_buffers(constant_buffer_data);
+    set_constant_buffers(device_context, constant_buffer, constant_buffer_data);
     device_context->VSSetConstantBuffers(0, 1, &constant_buffer);
     device_context->PSSetConstantBuffers(0, 1, &constant_buffer);
 
@@ -642,6 +698,6 @@ RRHandle Renderer::load_texture(void* data, PixelFormat pf, unsigned width, unsi
 
 RenderResource& Renderer::get_resource(RRHandle r)
 {
-    Assert(r.h > 0 && r.h < num_resources, "Resource handle out of bounds.");
+    Assert(r.h > 0 && r.h < max_resources, "Resource handle out of bounds.");
     return resources[r.h];
 }

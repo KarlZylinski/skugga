@@ -1,5 +1,6 @@
 #pragma once
 #include "math.h"
+#include "render_resource.h"
 
 struct Object
 {
