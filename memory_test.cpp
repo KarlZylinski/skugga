@@ -36,5 +36,25 @@ int main()
         memset(p4, 0xfc, s);
     }
 
+    {
+        Allocator ta = create_temp_allocator();
+        unsigned s = 128;
+        unsigned char* p1 = (unsigned char*)ta.alloc(s, 4);
+        memset(p1, 0xab, s);
+        assert(uintptr_t(p1) % 4 == 0);
+        unsigned char* p2 = (unsigned char*)ta.alloc(s);
+        memset(p2, 0xac, s);
+        assert(uintptr_t(p2) % DefaultMemoryAlign == 0);
+        unsigned char* p3 = (unsigned char*)ta.alloc(s, 128);
+        memset(p3, 0xad, s);
+        assert(uintptr_t(p3) % 128 == 0);
+        unsigned char* p4 = (unsigned char*)ta.alloc(s, 36);
+        memset(p4, 0xae, s);
+        assert(uintptr_t(p4) % 36 == 0);
+        unsigned char* p5 = (unsigned char*)ta.alloc(s, 21);
+        memset(p5, 0xaf, s);
+        assert(uintptr_t(p5) % 21 == 0);
+    }
+
     assert(tms.head == tms.start);
 }

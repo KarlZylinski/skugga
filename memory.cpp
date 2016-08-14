@@ -75,30 +75,42 @@ struct TempMemoryHeader
     bool freed;
     TempMemoryHeader* prev;
     TempMemoryHeader* prev_for_allocator;
-    unsigned size;
+    unsigned offset_to_next;
 };
 
-static void* temp_memory_blob_alloc(unsigned size, TempMemoryHeader* allocator_latest, unsigned align)
+static void* temp_memory_blob_alloc(unsigned size, void* allocator_latest, unsigned align)
 {
-    Assert(mem_ptr_diff(tms.start, tms.head + align + size + sizeof(TempMemoryHeader)) < tms.capacity, "Out of temp memory");
-    TempMemoryHeader* tmh = (TempMemoryHeader*)mem_align_forward(tms.head, align);
+    const unsigned header_align = alignof(TempMemoryHeader);
+    const unsigned header_size = sizeof(TempMemoryHeader);
+    const unsigned diff_to_header_size = sizeof(unsigned);
+    Assert(mem_ptr_diff(tms.start, tms.head + align + header_align + size + header_size + diff_to_header_size) < tms.capacity, "Out of temp memory");
+    TempMemoryHeader* tmh = (TempMemoryHeader*)mem_align_forward(tms.head, header_align);
     tmh->freed = false;
-    tmh->size = size + align;
-    tmh->prev_for_allocator = allocator_latest;
+
+    if (allocator_latest != nullptr)
+        tmh->prev_for_allocator = (TempMemoryHeader*)mem_ptr_sub(allocator_latest, *(unsigned*)mem_ptr_sub(allocator_latest, diff_to_header_size));
+    else
+        tmh->prev_for_allocator = nullptr;
     
     if (tms.head == tms.start)
         tmh->prev = nullptr;
 
-    tms.head += sizeof(TempMemoryHeader) + size + align;
+    tms.head += header_align + header_size + align + diff_to_header_size + size;
+    tmh->offset_to_next = mem_ptr_diff(tmh, tms.head);
 
     // Set next block's prev to this one.
-    if (mem_ptr_diff(tms.start, tms.head + sizeof(TempMemoryHeader) + align) < tms.capacity)
+    if (mem_ptr_diff(tms.start, tms.head + header_align + diff_to_header_size + header_size) < tms.capacity)
     {
-        TempMemoryHeader* next_header = (TempMemoryHeader*)mem_align_forward(tms.head, align);
+        TempMemoryHeader* next_header = (TempMemoryHeader*)mem_align_forward(tms.head, header_align);
         next_header->prev = tmh;
     }
-
-    return mem_ptr_add(tmh, sizeof(TempMemoryHeader));
+    
+    // The reason we add the diff_to_header is so we know how far back the header is, since the diff caused by the alignment varies.
+    void* after_header = mem_ptr_add(tmh, header_size + diff_to_header_size);
+    void* ptr_return = mem_align_forward(after_header, align);
+    unsigned diff_to_header = mem_ptr_diff(tmh, ptr_return);
+    *(unsigned*)mem_ptr_sub(ptr_return, diff_to_header_size) = diff_to_header;
+    return ptr_return;
 }
 
 static void temp_memory_blob_dealloc(void* ptr)
@@ -106,7 +118,9 @@ static void temp_memory_blob_dealloc(void* ptr)
     if (ptr == nullptr)
         return;
 
-    TempMemoryHeader* tmh = (TempMemoryHeader*)mem_ptr_sub(ptr, sizeof(TempMemoryHeader));
+    // There is an unsigned int just before the data which says how long back the header lives.
+    unsigned diff_to_header = *(unsigned*)mem_ptr_sub(ptr, sizeof(unsigned));
+    TempMemoryHeader* tmh = (TempMemoryHeader*)mem_ptr_sub(ptr, diff_to_header);
     tmh->freed = true;
 
     TempMemoryHeader* free_for_alloc = tmh;
@@ -118,7 +132,7 @@ static void temp_memory_blob_dealloc(void* ptr)
     }
 
     // We did not end up at last block. Just quit. Some other dealloaction will trigger the rewind.
-    if (tmh != mem_ptr_sub(tms.head, tmh->size + sizeof(TempMemoryHeader)))
+    if (mem_ptr_add(tmh, tmh->offset_to_next) != tms.head)
         return;
 
     // Continue backwards in temp memory, rewinding other freed blocks.
@@ -128,18 +142,12 @@ static void temp_memory_blob_dealloc(void* ptr)
     // If tmh is null, then we arrived at start of memory
     tms.head = tmh == nullptr
         ? tms.head = tms.start
-        : (unsigned char*)mem_ptr_add(tmh, tmh->size + sizeof(TempMemoryHeader));
+        : (unsigned char*)mem_ptr_add(tmh, tmh->offset_to_next);
 }
 
-void* temp_allocator_alloc(Allocator* allocator, unsigned size)
+void* temp_allocator_alloc(Allocator* allocator, unsigned size, unsigned align)
 {
-    void* p = temp_memory_blob_alloc(
-        size,
-        allocator->last_alloc == nullptr
-            ? nullptr
-            : (TempMemoryHeader*)mem_ptr_sub(allocator->last_alloc, sizeof(TempMemoryHeader)),
-        DefaultMemoryAlign
-    );
+    void* p = temp_memory_blob_alloc(size, allocator->last_alloc, align);
     Assert(p != nullptr, "Failed to allocate memory.");
     allocator->last_alloc = p;
     return p;
@@ -199,7 +207,7 @@ static void ensure_captured_callstacks_unused(CapturedCallstack* callstacks)
 }
 #endif
 
-void* heap_allocator_alloc(Allocator* allocator, unsigned size)
+void* heap_allocator_alloc(Allocator* allocator, unsigned size, unsigned align)
 {
     ++allocator->num_allocations;
     void* p = malloc(size);
