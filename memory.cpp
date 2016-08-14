@@ -16,25 +16,22 @@ struct TempMemoryStorage
     unsigned capacity;
 };
 
-namespace memory
-{
-
-unsigned ptr_diff(void* ptr1, void* ptr2)
+unsigned mem_ptr_diff(void* ptr1, void* ptr2)
 {
     return (unsigned)((unsigned char*)ptr2 - (unsigned char*)ptr1);
 }
 
-void* ptr_add(void* ptr1, unsigned offset)
+void* mem_ptr_add(void* ptr1, unsigned offset)
 {
     return (void*)((unsigned char*)ptr1 + offset);
 }
 
-void* ptr_sub(void* ptr1, unsigned offset)
+void* mem_ptr_sub(void* ptr1, unsigned offset)
 {
     return (void*)((unsigned char*)ptr1 - offset);
 }
 
-void* align_forward(void* p, unsigned align)
+void* mem_align_forward(void* p, unsigned align)
 {
     uintptr_t pi = uintptr_t(p);
     const unsigned mod = pi % align;
@@ -45,14 +42,9 @@ void* align_forward(void* p, unsigned align)
     return (void *)pi;
 }
 
-}
-
-namespace temp_memory
-{
-
 static TempMemoryStorage tms;
 
-void init(void* start, unsigned capacity)
+void temp_memory_blob_init(void* start, unsigned capacity)
 {
     memzero(&tms, TempMemoryStorage);
     tms.start = (unsigned char*)start;
@@ -60,10 +52,10 @@ void init(void* start, unsigned capacity)
     tms.capacity = capacity;
 }
 
-void* alloc(unsigned size, unsigned align)
+void* temp_memory_blob_alloc(unsigned size, unsigned align)
 {
-    Assert(memory::ptr_diff(tms.start, tms.head + align + size + sizeof(TempMemoryHeader)) < tms.capacity, "Out of temp memory");
-    TempMemoryHeader* tmh = (TempMemoryHeader*)memory::align_forward(tms.head, align);
+    Assert(mem_ptr_diff(tms.start, tms.head + align + size + sizeof(TempMemoryHeader)) < tms.capacity, "Out of temp memory");
+    TempMemoryHeader* tmh = (TempMemoryHeader*)mem_align_forward(tms.head, align);
     tmh->freed = false;
     tmh->size = size + align;
     
@@ -73,25 +65,25 @@ void* alloc(unsigned size, unsigned align)
     tms.head += sizeof(TempMemoryHeader) + size + align;
 
     // Set next block's prev to this one.
-    if (memory::ptr_diff(tms.start, tms.head + sizeof(TempMemoryHeader) + align) < tms.capacity)
+    if (mem_ptr_diff(tms.start, tms.head + sizeof(TempMemoryHeader) + align) < tms.capacity)
     {
-        TempMemoryHeader* next_header = (TempMemoryHeader*)memory::align_forward(tms.head, align);
+        TempMemoryHeader* next_header = (TempMemoryHeader*)mem_align_forward(tms.head, align);
         next_header->prev = tmh;
     }
 
-    return memory::ptr_add(tmh, sizeof(TempMemoryHeader));
+    return mem_ptr_add(tmh, sizeof(TempMemoryHeader));
 }
 
-void dealloc(void* ptr)
+void temp_memory_blob_dealloc(void* ptr)
 {
     if (ptr == nullptr)
         return;
 
-    TempMemoryHeader* tmh = (TempMemoryHeader*)memory::ptr_sub(ptr, sizeof(TempMemoryHeader));
+    TempMemoryHeader* tmh = (TempMemoryHeader*)mem_ptr_sub(ptr, sizeof(TempMemoryHeader));
     tmh->freed = true;
 
     // Are we the last block?
-    if (memory::align_forward(memory::ptr_add(ptr, tmh->size)) != tms.head)
+    if (mem_align_forward(mem_ptr_add(ptr, tmh->size)) != tms.head)
         return;
 
     // Continue backwards in temp memory, rewinding other freed blocks.
@@ -103,26 +95,21 @@ void dealloc(void* ptr)
     tms.head = tmh == nullptr ? tms.start : (unsigned char*)tmh;
 }
 
-}
-
-namespace temp_allocator
-{
-
-void* alloc(Allocator* allocator, unsigned size)
+void* temp_allocator_alloc(Allocator* allocator, unsigned size)
 {
     Assert(allocator->num_allocations + 1 < Allocator::MaxAllocations, "Too many allocations.");
-    void* p = temp_memory::alloc(size);
+    void* p = temp_memory_blob_alloc(size);
     Assert(p != nullptr, "Failed to allocate memory.");
     allocator->allocations[allocator->num_allocations++] = p;
     return p;
 }
 
-void dealloc(Allocator* allocator, void* ptr)
+void temp_allocator_dealloc(Allocator* allocator, void* ptr)
 {
     if (ptr == nullptr)
         return;
     
-    temp_memory::dealloc(ptr);
+    temp_memory_blob_dealloc(ptr);
 
     for (unsigned i = 0; i < allocator->num_allocations; ++i)
     {
@@ -145,35 +132,23 @@ void dealloc(Allocator* allocator, void* ptr)
     }
 }
 
-void dealloc_all(Allocator* allocator)
+void temp_allocator_dealloc_all(Allocator* allocator)
 {
     for (unsigned char i = 0; i < allocator->num_allocations; ++i)
     {
-        temp_memory::dealloc(allocator->allocations[i]);
+        temp_memory_blob_dealloc(allocator->allocations[i]);
     }
 
     memset(allocator->allocations, 0, sizeof(void*) * Allocator::MaxAllocations);
     allocator->num_allocations = 0;
 }
 
-}
-
-namespace debug_allocator
-{
-
-void* alloc(Allocator* allocator, unsigned size)
+void* heap_allocator_alloc(Allocator* allocator, unsigned size)
 {
     return malloc(size);
 }
 
-void dealloc(Allocator* allocator, void* ptr)
+void heap_allocator_dealloc(Allocator* allocator, void* ptr)
 {
     free(ptr);
-}
-
-void dealloc_all(Allocator* allocator)
-{
-
-}
-
 }

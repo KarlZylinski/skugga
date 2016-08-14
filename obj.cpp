@@ -109,7 +109,7 @@ static ParsedData parse(Allocator* alloc, unsigned char* data, unsigned data_siz
     ParserState ps = {};
     ps.data = data;
     ps.head = data;
-    ps.end = (unsigned char*)memory::ptr_add(data, data_size);
+    ps.end = (unsigned char*)mem_ptr_add(data, data_size);
     ParsedData pd = {};
     pd.vertices = {alloc};
     pd.normals = {alloc};

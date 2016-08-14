@@ -28,46 +28,37 @@ struct Allocator
     unsigned num_allocations;
 };
 
-namespace memory 
-{
+static const unsigned DefaultMemoryAlign = 8;
+unsigned mem_ptr_diff(void* ptr1, void* ptr2);
+void* mem_ptr_add(void* ptr1, unsigned offset);
+void* mem_ptr_sub(void* ptr1, unsigned offset);
+void* mem_align_forward(void* p, unsigned align = DefaultMemoryAlign);
 
-static const unsigned default_align = 8;
-unsigned ptr_diff(void* ptr1, void* ptr2);
-void* ptr_add(void* ptr1, unsigned offset);
-void* ptr_sub(void* ptr1, unsigned offset);
-void* align_forward(void* p, unsigned align = default_align);
-
-}
-
-namespace temp_memory
-{
-
-void init(void* start, unsigned capacity);
-void* alloc(unsigned size, unsigned align = memory::default_align);
-void dealloc(void* ptr);
+void temp_memory_blob_init(void* start, unsigned capacity);
+void* temp_memory_blob_alloc(unsigned size, unsigned align = DefaultMemoryAlign);
+void temp_memory_blob_dealloc(void* ptr);
 const unsigned TempMemorySize = 1024 * 1024 * 1024;
 
-}
+void* temp_allocator_alloc(Allocator* allocator, unsigned size);
+void temp_allocator_dealloc(Allocator* allocator, void* ptr);
+void temp_allocator_dealloc_all(Allocator* allocator);
 
+void* heap_allocator_alloc(Allocator* allocator, unsigned size);
+void heap_allocator_dealloc(Allocator* allocator, void* ptr);
 
-namespace temp_allocator
+inline Allocator create_temp_allocator()
 {
-
-void* alloc(Allocator* allocator, unsigned size);
-void dealloc(Allocator* allocator, void* ptr);
-void dealloc_all(Allocator* allocator);
-
+    Allocator a = {};
+    a.alloc_internal = temp_allocator_alloc;
+    a.dealloc_internal = temp_allocator_dealloc;
+    a.out_of_scope = temp_allocator_dealloc_all;
+    return a;
 }
-
-namespace debug_allocator
+ 
+inline Allocator create_heap_allocator()
 {
-
-void* alloc(Allocator* allocator, unsigned size);
-void dealloc(Allocator* allocator, void* ptr);
-void dealloc_all(Allocator* allocator);
-
+    Allocator a = {};
+    a.alloc_internal = heap_allocator_alloc;
+    a.dealloc_internal = heap_allocator_dealloc;
+    return a;
 }
-
-#define create_temp_allocator() { temp_allocator::alloc, temp_allocator::dealloc, temp_allocator::dealloc_all }
-
-#define create_debug_allocator() { debug_allocator::alloc, debug_allocator::dealloc, debug_allocator::dealloc_all }

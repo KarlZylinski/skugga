@@ -137,8 +137,8 @@ static void process_input(Camera* camera)
 int main()
 {
 
-    void* temp_memory_block = VirtualAlloc(nullptr, temp_memory::TempMemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-    temp_memory::init(temp_memory_block, temp_memory::TempMemorySize);
+    void* temp_memory_block = VirtualAlloc(nullptr, TempMemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    temp_memory_blob_init(temp_memory_block, TempMemorySize);
     
     WindowsWindow window = {};
     create_window(&window);
@@ -150,7 +150,7 @@ int main()
     window.state.key_released_callback = key_released_callback;
     window.state.key_pressed_callback = key_pressed_callback;
     window.state.mouse_moved_callback = mouse_moved_callback;
-    Allocator alloc = create_debug_allocator();
+    Allocator alloc = create_heap_allocator();
 
     bool render_fullscreen_quad = false;
     if (render_fullscreen_quad) {
