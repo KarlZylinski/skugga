@@ -21,6 +21,8 @@ unsigned pixel_size(PixelFormat pf)
             return 16;
         case PixelFormat::R32_UINT:
             return 4;
+        case PixelFormat::R8_UINT_NORM:
+            return 1;
         default:
             Error("Unknown pixel format."); return 0;
     }

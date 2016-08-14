@@ -20,6 +20,7 @@ struct ID3D11Texture2D;
 struct ID3D11DepthStencilView;
 struct ID3D11RasterizerState;
 struct IDXGISwapChain;
+struct ID3D11SamplerState;
 
 struct ConstantBuffer
 {
@@ -62,6 +63,7 @@ struct Shader
     ID3D11VertexShader* vertex_shader;
     ID3D11PixelShader* pixel_shader;
     ID3D11InputLayout* input_layout;
+    ID3D11SamplerState* sampler_state;
 };
 
 enum struct RenderResourceType

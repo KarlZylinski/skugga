@@ -67,10 +67,10 @@ void create_world(World* world, Renderer* renderer)
     float floor_to_cieling = 2;
     float pillar_width = 0.4f;
 
-    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color::random(), 4, false));
-    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color::random(), 12, false));
-    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color::random(), 123, false));
-    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color::random(), 145, false));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, 0, 0}, color_random(), 4, false));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, 1}, color_random(), 12, false));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {pillar_width, floor_to_cieling, pillar_width}, {-1, (floor_thickness + floor_to_cieling) / 2, -1}, color_random(), 123, false));
+    world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling, 0}, color_random(), 145, false));
     //world->objects.add(create_scaled_box(renderer, lm.mesh, {floor_width, floor_thickness, floor_depth}, {0, floor_thickness + floor_to_cieling - 15, 0}, color::random(), 12333))
 
     //world->objects.add(create_scaled_box(renderer, lm.mesh, {2,2,2}, {0, 0, 0}, color::random(), 145, false));

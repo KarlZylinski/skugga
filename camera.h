@@ -9,11 +9,6 @@ struct Camera
     Vector3 position;
 };
 
-namespace camera
-{
-
-Matrix4x4 calc_view_matrix(const Camera& c);
-void set_projection_mode(Camera* c);
-void set_lightmap_rendering_mode(Camera* c);
-
-}
+Matrix4x4 camera_calc_view_matrix(const Camera& c);
+Camera camera_create_projection();
+Camera camera_create_uv_rendering();

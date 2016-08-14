@@ -78,9 +78,8 @@ void map(World& world, Renderer* renderer)
         renderer->set_render_targets(vertex_data_rts, 2);
         renderer->set_shader(vertex_data_shader);
         renderer->pre_draw_frame();
-        Camera vertex_data_camera;
-        camera::set_lightmap_rendering_mode(&vertex_data_camera);
-        renderer->draw(obj, camera::calc_view_matrix(vertex_data_camera), vertex_data_camera.projection_matrix);
+        Camera vertex_data_camera = camera_create_uv_rendering();
+        renderer->draw(obj, camera_calc_view_matrix(vertex_data_camera), vertex_data_camera.projection_matrix);
         renderer->present();
 
         MappedTexture vertex_image = renderer->map_texture(vertex_texture);
@@ -105,8 +104,7 @@ void map(World& world, Renderer* renderer)
             {
                 const Vector3& pos = *(Vector3*)&positions[pixel_index];
 
-                Camera base_cam = {};
-                camera::set_projection_mode(&base_cam);
+                Camera base_cam = camera_create_projection();
                 base_cam.position = {pos.x, pos.y, pos.z};
 
                 Patch p = base_patch;

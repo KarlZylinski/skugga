@@ -1,4 +1,4 @@
 #pragma once
 
-const unsigned WindowWidth = 800;
-const unsigned WindowHeight = 800;
+const unsigned WindowWidth = 256;
+const unsigned WindowHeight = 256;

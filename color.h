@@ -15,15 +15,10 @@ struct ColorRGB
     float r, g, b;
 };
 
-namespace color
-{
-
-Color random();
+Color color_random();
 bool almost_equal(const Color& c1, const Color& c2);
 
-}
-
-__forceinline void operator+=(Color& c1, const Color& c2)
+inline void operator+=(Color& c1, const Color& c2)
 {
     c1.r += c2.r;
     c1.g += c2.g;
@@ -31,14 +26,14 @@ __forceinline void operator+=(Color& c1, const Color& c2)
     c1.a += c2.a;
 }
 
-__forceinline void operator+=(ColorRGB& c1, const ColorRGB& c2)
+inline void operator+=(ColorRGB& c1, const ColorRGB& c2)
 {
     c1.r += c2.r;
     c1.g += c2.g;
     c1.b += c2.b;
 }
 
-__forceinline ColorRGB operator+(const ColorRGB& c1, const ColorRGB& c2)
+inline ColorRGB operator+(const ColorRGB& c1, const ColorRGB& c2)
 {
     return
     {
@@ -49,7 +44,7 @@ __forceinline ColorRGB operator+(const ColorRGB& c1, const ColorRGB& c2)
 }
 
 
-__forceinline ColorRGB operator*(const ColorRGB& c, float s)
+inline ColorRGB operator*(const ColorRGB& c, float s)
 {
     return
     {

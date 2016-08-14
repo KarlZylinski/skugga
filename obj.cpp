@@ -148,7 +148,7 @@ static int get_existing_vertex(const DynamicArray<Vertex>& vertices, const Verte
         if (vector3::almost_equal(v1.position, v2.position)
             && vector3::almost_equal(v1.normal, v2.normal)
             && vector2::almost_equal(v1.uv, v2.uv)
-            && color::almost_equal(v1.color, v2.color))
+            && almost_equal(v1.color, v2.color))
         {
             return i;
         }

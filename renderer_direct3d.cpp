@@ -20,6 +20,8 @@ namespace
             return DXGI_FORMAT_R32G32B32A32_FLOAT;
         case PixelFormat::R32_UINT:
             return DXGI_FORMAT_R32_UINT;
+        case PixelFormat::R8_UINT_NORM:
+            return DXGI_FORMAT_R8_UNORM;
         default:
             Error("Pixel format conversion in dxgi missing.");
             return DXGI_FORMAT_UNKNOWN;
@@ -166,9 +168,25 @@ RRHandle Renderer::load_shader(const wchar* filename)
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
+
     device->CreateInputLayout(ied, 4, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &s.input_layout);
     vs_blob->Release();
     ps_blob->Release();
+
+    D3D11_SAMPLER_DESC sd = CD3D11_SAMPLER_DESC(CD3D11_DEFAULT());
+    sd.MaxAnisotropy = 0;
+    sd.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+    ID3D11SamplerState* ss;
+
+    if (device->CreateSamplerState(&sd, &ss) != S_OK)
+    {
+        s.vertex_shader->Release();
+        s.pixel_shader->Release();
+        return {InvalidHandle};
+    }
+
+    s.sampler_state = ss;
+
     RenderResource r;
     r.type = RenderResourceType::Shader;
     r.shader = s;
@@ -182,6 +200,11 @@ void Renderer::set_shader(RRHandle shader)
     device_context->VSSetShader(s.vertex_shader, 0, 0);
     device_context->PSSetShader(s.pixel_shader, 0, 0);
     device_context->IASetInputLayout(s.input_layout);
+
+    if (s.sampler_state != nullptr)
+    {
+        device_context->PSSetSamplers(0, 1, &s.sampler_state);
+    }
 }
 
 RenderTarget Renderer::create_back_buffer()
@@ -505,7 +528,7 @@ void Renderer::pre_draw_frame()
 void Renderer::draw_frame(const World& world, const Camera& camera, DrawLights draw_lights)
 {
     pre_draw_frame();
-    Matrix4x4 view_matrix = camera::calc_view_matrix(camera);
+    Matrix4x4 view_matrix = camera_calc_view_matrix(camera);
 
     for (unsigned i = 0; i < world.objects.num; ++i)
     {
@@ -567,7 +590,10 @@ RRHandle Renderer::load_texture(void* data, PixelFormat pf, unsigned width, unsi
     ID3D11ShaderResourceView* resource_view;
 
     if (device->CreateShaderResourceView(tex, nullptr, &resource_view) != S_OK)
+    {
+        tex->Release();
         return {InvalidHandle};
+    }
 
     RenderResource r;
     r.type = RenderResourceType::Texture;

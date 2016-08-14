@@ -93,3 +93,17 @@ struct DynamicArray
         return data[i];
     }
 };
+
+template<typename T>
+inline DynamicArray<T> dynamic_array_create(Allocator* allocator)
+{
+    DynamicArray<T> da = {};
+    da.allocator = allocator;
+    return da;
+}
+
+template<typename T>
+inline void dynamic_array_destroy(DynamicArray<T>* da)
+{
+    da->allocator->dealloc(da->data);
+}
