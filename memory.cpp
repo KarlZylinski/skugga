@@ -87,10 +87,9 @@ static void* temp_memory_blob_alloc(unsigned size, void* allocator_latest, unsig
     TempMemoryHeader* tmh = (TempMemoryHeader*)mem_align_forward(tms.head, header_align);
     tmh->freed = false;
 
-    if (allocator_latest != nullptr)
-        tmh->prev_for_allocator = (TempMemoryHeader*)mem_ptr_sub(allocator_latest, *(unsigned*)mem_ptr_sub(allocator_latest, diff_to_header_size));
-    else
-        tmh->prev_for_allocator = nullptr;
+    tmh->prev_for_allocator = allocator_latest == nullptr
+        ? nullptr
+        : (TempMemoryHeader*)mem_ptr_sub(allocator_latest, *(unsigned*)mem_ptr_sub(allocator_latest, diff_to_header_size));
     
     if (tms.head == tms.start)
         tmh->prev = nullptr;

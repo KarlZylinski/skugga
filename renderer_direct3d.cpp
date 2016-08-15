@@ -84,15 +84,18 @@ static DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
     }
 }
 
-static void check_ok(HRESULT res)
+static void check_ok(HRESULT res, ID3DBlob* error_blob)
 {
-    if (res >= 0)
-    {
+    if (res == S_OK)
         return;
-    }
 
-    static char msg[120];
-    wsprintf(msg, "Error in renderer: %0x", res);
+    static char msg[256];
+
+    if (error_blob)
+        wsprintf(msg, "Error in renderer:\n %s", (char*)error_blob->GetBufferPointer());
+    else
+        wsprintf(msg, "Error in renderer: %0x", res);
+
     MessageBox(nullptr, msg, nullptr, 0);
 }
 
@@ -131,7 +134,7 @@ void Renderer::init(void* window_handle)
         &device,
         nullptr,
         &device_context
-    ));
+    ), nullptr);
 
     D3D11_BUFFER_DESC cbd = {};
     cbd.ByteWidth = sizeof(ConstantBuffer);
@@ -194,16 +197,6 @@ void Renderer::shutdown()
     device_context->Release();
 }
 
-static void check_shader_error(ID3DBlob* error_blob)
-{
-    if (error_blob)
-    {
-        Error((char*)error_blob->GetBufferPointer());
-    }
-    else
-        Error("Unknown shader errror.");
-}
-
 RRHandle Renderer::load_shader(const char* filename)
 {
     unsigned handle = find_free_resource_handle();
@@ -214,7 +207,6 @@ RRHandle Renderer::load_shader(const char* filename)
     ID3DBlob* vs_blob = nullptr;
     ID3DBlob* ps_blob = nullptr;
     ID3DBlob* error_blob = nullptr;
-    HRESULT result;
 
     Allocator ta = create_temp_allocator();
     LoadedFile shader_file = file_load(&ta, filename);
@@ -222,7 +214,7 @@ RRHandle Renderer::load_shader(const char* filename)
     if (!shader_file.valid)
         return {InvalidHandle};
 
-    result = D3DCompile(
+    check_ok(D3DCompile(
         shader_file.file.data,
         shader_file.file.size,
         nullptr,
@@ -234,10 +226,9 @@ RRHandle Renderer::load_shader(const char* filename)
         0,
         &vs_blob,
         &error_blob
-    );
-    if (FAILED(result))
-        check_shader_error(error_blob);
-    result = D3DCompile(
+    ), error_blob);
+
+    check_ok(D3DCompile(
         shader_file.file.data,
         shader_file.file.size,
         nullptr,
@@ -249,9 +240,8 @@ RRHandle Renderer::load_shader(const char* filename)
         0,
         &ps_blob,
         &error_blob
-    );
-    if (FAILED(result))
-        check_shader_error(error_blob);
+    ), error_blob);
+
     Shader s = {};
     device->CreateVertexShader(vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), nullptr, &s.vertex_shader);
     device->CreatePixelShader(ps_blob->GetBufferPointer(), ps_blob->GetBufferSize(), nullptr, &s.pixel_shader);
