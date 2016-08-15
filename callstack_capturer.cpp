@@ -21,7 +21,7 @@ void callstack_destroy(CapturedCallstack* c)
     c->used = false;
 }
 
-void callstack_print(const char* caption, const CapturedCallstack* captured_callstack)
+void callstack_print(const char* caption, const CapturedCallstack& captured_callstack)
 {
     HANDLE process = GetCurrentProcess();
     SymInitialize(process, NULL, TRUE);
@@ -31,9 +31,9 @@ void callstack_print(const char* caption, const CapturedCallstack* captured_call
 
     auto callstack_str = (char*)malloc(symbol->MaxNameLen * 64);
     unsigned callstack_str_size = 0;
-    for (unsigned i = 0; i < captured_callstack->num_frames; i++ )
+    for (unsigned i = 0; i < captured_callstack.num_frames; i++ )
     {
-        SymFromAddr(process, (DWORD64)(captured_callstack->frames[i]), 0, symbol);
+        SymFromAddr(process, (DWORD64)(captured_callstack.frames[i]), 0, symbol);
         memcpy(callstack_str + callstack_str_size, symbol->Name, symbol->NameLen);
         callstack_str[callstack_str_size + symbol->NameLen] = '\n';
         callstack_str_size += symbol->NameLen + 1;

@@ -202,7 +202,7 @@ static void ensure_captured_callstacks_unused(CapturedCallstack* callstacks)
         if (!callstacks[i].used)
             continue;
 
-        callstack_print("Memory leak stack trace", callstacks + i);
+        callstack_print("Memory leak stack trace", callstacks[i]);
     }
 }
 #endif
