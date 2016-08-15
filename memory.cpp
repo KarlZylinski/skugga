@@ -187,7 +187,7 @@ static void remove_captured_callstack(CapturedCallstack* callstacks, void* p)
     for (unsigned i = 0; i < max_captured_callstacks; ++i) {
         if (callstacks[i].ptr == p)
         {
-            callstacks[i].used = false;
+            callstack_destroy(callstacks + i);
             return;
         }
     }

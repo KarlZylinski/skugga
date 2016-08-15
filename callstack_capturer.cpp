@@ -16,6 +16,11 @@ CapturedCallstack callstack_capture(unsigned frames_to_skip, void* p)
     return cc;
 }
 
+void callstack_destroy(CapturedCallstack* c)
+{
+    c->used = false;
+}
+
 void callstack_print(const char* caption, const CapturedCallstack* captured_callstack)
 {
     HANDLE process = GetCurrentProcess();
@@ -35,4 +40,6 @@ void callstack_print(const char* caption, const CapturedCallstack* captured_call
     }
     callstack_str[callstack_str_size] = 0;
     MessageBox(nullptr, callstack_str, caption, MB_ICONERROR);
+    free(callstack_str);
+    free(symbol);
 }
