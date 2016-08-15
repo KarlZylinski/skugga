@@ -6,7 +6,7 @@
     #include "callstack_capturer.h"
 #endif
 
-static const unsigned DefaultMemoryAlign = 8;
+const unsigned DefaultMemoryAlign = 8;
 
 struct Allocator
 {
