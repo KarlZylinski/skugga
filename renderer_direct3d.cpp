@@ -72,6 +72,8 @@ static DXGI_FORMAT pixel_format_to_dxgi_format(PixelFormat pf)
         return DXGI_FORMAT_R8G8B8A8_UINT;
     case PixelFormat::R8G8B8A8_UINT_NORM:
         return DXGI_FORMAT_R8G8B8A8_UNORM;
+    case PixelFormat::R32_FLOAT:
+        return DXGI_FORMAT_R32_FLOAT;
     case PixelFormat::R32G32B32A32_FLOAT:
         return DXGI_FORMAT_R32G32B32A32_FLOAT;
     case PixelFormat::R32_UINT:

@@ -30,57 +30,6 @@ static void mouse_moved_callback(const Vector2i& delta)
     mouse_add_delta(delta);
 }
 
-static void create_distortion_compensation_texture(unsigned char* pixels, unsigned size)
-{
-    const unsigned half_size = size/2;
-    const unsigned fourth_size = size/4;
-    const Vector3 observation_dir = vector3_up;
-    const Vector3 observation_pos = {(float)half_size, 0, (float)half_size};
-    const unsigned plane_y = half_size;
-
-    for (unsigned z = fourth_size; z < size - fourth_size; ++z)
-    {
-        for (unsigned x = fourth_size; x < size - fourth_size; ++x)
-        {
-            const Vector3 p = {(float)x * 2 - (float)half_size, (float)plane_y, (float)z * 2 - (float)half_size};
-            pixels[z * size + x] = (unsigned char)(vector3_dot(observation_dir, vector3_normalize(p - observation_pos)) * 255);
-        }
-    }
-
-    for (unsigned z = fourth_size; z <= size - fourth_size; ++z)
-        memcpy(pixels + z * size, pixels + z * size + fourth_size * 2, fourth_size);
-
-    for (unsigned z = fourth_size; z <= size - fourth_size; ++z)
-        memcpy(pixels + z * size + fourth_size * 3, pixels + z * size + fourth_size, fourth_size);
-
-    for (unsigned z = 0; z < fourth_size; ++z)
-        memcpy(pixels + z * size + fourth_size + 1, pixels + size * (size - z - fourth_size * 2) + fourth_size + 1, half_size);
-
-    for (unsigned z = fourth_size * 3; z < size; ++z)
-        memcpy(pixels + z * size + fourth_size + 1, pixels + size * (z - fourth_size * 2) + fourth_size + 1, half_size);
-}
-
-static void create_cosine_law_texture(unsigned char* pixels, unsigned size)
-{
-    const float fourth_size = (float)(size/4);
-    const float half_size = (float)(size/2);
-    const float double_size = (float)(size*2);
-    const unsigned num_pixels = size*size;
-    const Vector3 normal = {0, 1, 0};
-    const Vector3 pos = vector3_zero;
-    for (unsigned i = 0; i < num_pixels; ++i)
-    {
-        const float x = (float)(i % size) - half_size;
-        const float z = (float)(i / size) - half_size;
-        const float hx = x/2;
-        const float hz = z/2;
-        const float y1 = sqrtf(fourth_size * fourth_size - hx*hx - hz*hz);
-        const Vector3 light_pos = {x, y1, z};
-        const unsigned char color = (unsigned char)(vector3_dot(normal, vector3_normalize(light_pos - pos)) * 255);
-        pixels[i] = color;
-    }
-}
-
 static Mesh create_quad(Allocator* alloc)
 {
     Mesh m = mesh_create(alloc);
@@ -175,14 +124,10 @@ int main()
 
     bool render_fullscreen_quad = false;
     if (render_fullscreen_quad) {
-        unsigned s = 128;
-        unsigned num_pixels = 128*128;
-        unsigned size = num_pixels*sizeof(unsigned char);
-        unsigned char* pixels = (unsigned char*)malloc(size);
-        memset(pixels, 0, size);
-        create_distortion_compensation_texture(pixels, s);
+        /*
         Mesh q = create_quad(&alloc);
-        RRHandle tex = renderer.load_texture(pixels, PixelFormat::R8_UINT_NORM, 128, 128);
+        RRHandle tex = renderer.load_texture(pixels, PixelFormat::R32_FLOAT, 128, 128);
+        alloc.dealloc(pixels);
         RRHandle quad_geo = renderer.load_geometry(q.vertices.data, q.vertices.num, q.indices.data, q.indices.num);
         mesh_destroy(&q);
         Object obj = {};
@@ -216,7 +161,7 @@ int main()
             mouse_end_of_frame();
         }
 
-        world_destroy(&w);
+        world_destroy(&w);*/
     }
     else
     {

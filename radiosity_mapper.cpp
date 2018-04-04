@@ -9,6 +9,7 @@
 #include "world.h"
 #include "camera.h"
 #include "memory.h"
+#include "distortion_texture.h"
 
 struct Patch
 {
@@ -148,6 +149,18 @@ void run_radiosity_mapper(World& world, Renderer* renderer)
         Assert(IsValidRRHandle(tex_handle), "Failed uploading offsets texture to GPU in lightmapper.");
         obj.lightmap_patch_offset = tex_handle;
     }
+
+    /*unsigned lms = LightmapSize;
+    float* distortion_texture = create_distortion_texture(&ta, lms*2);
+    float* dist_front = (float*)ta.alloc(sizeof(float)*lms);
+    for (unsigned i = 0; i < lms; ++i)
+        memcpy(dist_front + i*lms, distortion_texture + (2*lms*((lms/2) + i) + lms/2), lms);
+    float* dist_up = (float*)ta.alloc(sizeof(float)*lms);
+    for (unsigned i = 0; i < lms/4; ++i)
+        memcpy(dist_up + i*lms, distortion_texture + 2*lms*i + lms/2, lms);
+    float* dist_down = (float*)ta.alloc(sizeof(float)*lms);
+    float* dist_left = (float*)ta.alloc(sizeof(float)*lms);
+    float* dist_right = (float*)ta.alloc(sizeof(float)*lms);*/
 
     renderer->set_shader(light_contribution_shader);
     renderer->set_render_target(&light_contrib_texture);

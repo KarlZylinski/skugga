@@ -9,6 +9,8 @@ unsigned pixel_size(PixelFormat pf)
             return 4;
         case PixelFormat::R8G8B8A8_UINT_NORM:
             return 4;
+        case PixelFormat::R32_FLOAT:
+            return 4;
         case PixelFormat::R32G32B32A32_FLOAT:
             return 16;
         case PixelFormat::R32_UINT:
